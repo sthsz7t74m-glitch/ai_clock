@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>デジタル時計</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="clock-app">
+      <section class="clock-card" aria-live="polite">
+        <p class="label">現在時刻</p>
+        <div class="timezone-picker">
+          <label class="picker-label" for="timezoneSelect">地域を選択</label>
+          <select id="timezoneSelect" aria-label="タイムゾーンを選択">
+            <option value="Asia/Tokyo">東京</option>
+            <option value="Europe/London">ロンドン</option>
+            <option value="America/New_York">ニューヨーク</option>
+            <option value="America/Los_Angeles">ロサンゼルス</option>
+            <option value="Australia/Sydney">シドニー</option>
+          </select>
+        </div>
+        <p id="cityName" class="city-name">東京</p>
+        <h1 id="time">--:--:--</h1>
+        <p id="date">----</p>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
