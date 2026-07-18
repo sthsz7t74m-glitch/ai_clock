@@ -1,3 +1,8 @@
+const worldClockTab = document.getElementById("worldClockTab");
+const stopwatchTab = document.getElementById("stopwatchTab");
+const worldClockView = document.getElementById("worldClockView");
+const stopwatchView = document.getElementById("stopwatchView");
+
 const timeElement = document.getElementById("time");
 const dateElement = document.getElementById("date");
 const cityNameElement = document.getElementById("cityName");
@@ -7,6 +12,13 @@ const hour12Button = document.getElementById("hour12Button");
 const addFavoriteButton = document.getElementById("addFavoriteButton");
 const favoritesList = document.getElementById("favoritesList");
 const favoriteCountLabel = document.getElementById("favoriteCount");
+
+const stopwatchTimeElement = document.getElementById("stopwatchTime");
+const startButton = document.getElementById("startButton");
+const pauseResumeButton = document.getElementById("pauseResumeButton");
+const resetButton = document.getElementById("resetButton");
+const lapButton = document.getElementById("lapButton");
+const lapsList = document.getElementById("lapsList");
 
 const cityNames = {
   "Asia/Tokyo": "東京",
@@ -18,10 +30,19 @@ const cityNames = {
 
 const STORAGE_HOUR_FORMAT = "aiClockHourFormat";
 const STORAGE_FAVORITES = "aiClockFavorites";
+const STORAGE_STOPWATCH = "aiClockStopwatch";
 const HOUR_FORMAT_24 = "24";
 const HOUR_FORMAT_12 = "12";
 const MAX_FAVORITES = 5;
 let hasLocalStorage = true;
+let stopwatchState = {
+  running: false,
+  elapsed: 0,
+  startTimestamp: null,
+  laps: [],
+  lastLapElapsed: 0,
+};
+let rafId = null;
 
 function safeGetItem(key) {
   if (!hasLocalStorage) return null;
@@ -52,9 +73,9 @@ function getSavedFavorites() {
   if (!saved) return [];
 
   try {
-    const favorites = JSON.parse(saved);
-    return Array.isArray(favorites) ? favorites : [];
-  } catch (error) {
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
     return [];
   }
 }
@@ -67,10 +88,39 @@ function saveHourFormat(format) {
   safeSetItem(STORAGE_HOUR_FORMAT, format);
 }
 
+function getSavedStopwatch() {
+  const saved = safeGetItem(STORAGE_STOPWATCH);
+  if (!saved) return null;
+
+  try {
+    const parsed = JSON.parse(saved);
+    if (parsed && typeof parsed === "object") {
+      return {
+        running: Boolean(parsed.running),
+        elapsed: Number(parsed.elapsed) || 0,
+        startTimestamp:
+          parsed.running && Number(parsed.startTimestamp)
+            ? Number(parsed.startTimestamp)
+            : null,
+        laps: Array.isArray(parsed.laps) ? parsed.laps : [],
+        lastLapElapsed: Number(parsed.lastLapElapsed) || 0,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function saveStopwatchState() {
+  safeSetItem(STORAGE_STOPWATCH, JSON.stringify(stopwatchState));
+}
+
 function parseIntlDate(date, options) {
   try {
     return new Intl.DateTimeFormat("ja-JP", options).format(date);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -132,6 +182,18 @@ function formatDateTime(date, timeZone, hourFormat) {
     time,
     date: dateText,
   };
+}
+
+function formatStopwatchTime(ms) {
+  const totalCentiseconds = Math.floor(ms / 10);
+  const hundredths = totalCentiseconds % 100;
+  const seconds = Math.floor(totalCentiseconds / 100) % 60;
+  const minutes = Math.floor(totalCentiseconds / 6000) % 60;
+  const hours = Math.floor(totalCentiseconds / 360000);
+
+  const padded = (value, length = 2) => String(value).padStart(length, "0");
+
+  return `${padded(hours)}:${padded(minutes)}:${padded(seconds)}.${padded(hundredths)}`;
 }
 
 function updateClock() {
@@ -221,23 +283,172 @@ function removeFavorite(timeZone) {
   renderFavorites();
 }
 
-function onTimeZoneChange() {
-  updateClock();
-  updateAddFavoriteButtonState();
+function switchView(view) {
+  const worldActive = view === "world";
+  worldClockView.classList.toggle("hidden", !worldActive);
+  stopwatchView.classList.toggle("hidden", worldActive);
+  worldClockTab.classList.toggle("active", worldActive);
+  stopwatchTab.classList.toggle("active", !worldActive);
+  worldClockTab.setAttribute("aria-selected", worldActive.toString());
+  stopwatchTab.setAttribute("aria-selected", (!worldActive).toString());
+}
+
+function getStopwatchElapsed(now) {
+  if (stopwatchState.running && stopwatchState.startTimestamp != null) {
+    return (
+      stopwatchState.elapsed + Math.max(0, now - stopwatchState.startTimestamp)
+    );
+  }
+  return stopwatchState.elapsed;
+}
+
+function updateStopwatchDisplay() {
+  const now = Date.now();
+  const elapsed = getStopwatchElapsed(now);
+  stopwatchTimeElement.textContent = formatStopwatchTime(elapsed);
+  updateControlStates();
+}
+
+function animateStopwatch() {
+  updateStopwatchDisplay();
+  rafId = requestAnimationFrame(animateStopwatch);
+}
+
+function updateControlStates() {
+  startButton.disabled = stopwatchState.running || stopwatchState.elapsed > 0;
+  pauseResumeButton.disabled =
+    stopwatchState.elapsed === 0 && !stopwatchState.running;
+  resetButton.disabled =
+    stopwatchState.elapsed === 0 && !stopwatchState.running;
+  lapButton.disabled = !stopwatchState.running;
+  pauseResumeButton.textContent = stopwatchState.running ? "一時停止" : "再開";
+}
+
+function addLap() {
+  if (!stopwatchState.running) return;
+
+  const now = Date.now();
+  const elapsed = getStopwatchElapsed(now);
+  const lapTime = elapsed - stopwatchState.lastLapElapsed;
+  stopwatchState.lastLapElapsed = elapsed;
+  stopwatchState.laps.unshift({
+    number: stopwatchState.laps.length + 1,
+    lapTime,
+    totalTime: elapsed,
+  });
+  saveStopwatchState();
+  renderLaps();
+}
+
+function renderLaps() {
+  const laps = stopwatchState.laps;
+  lapsList.innerHTML = "";
+
+  if (laps.length === 0) {
+    lapsList.innerHTML = '<p class="empty-message">ラップはまだありません</p>';
+    return;
+  }
+
+  laps.forEach((lap, index) => {
+    const card = document.createElement("article");
+    card.className = "lap-card";
+    card.innerHTML = `
+      <div class="lap-row">
+        <p class="lap-number">Lap ${lap.number}</p>
+        <p class="lap-duration">${formatStopwatchTime(lap.lapTime)}</p>
+      </div>
+      <div class="lap-row">
+        <p class="lap-time">区間</p>
+        <p class="lap-total">合計 ${formatStopwatchTime(lap.totalTime)}</p>
+      </div>
+    `;
+    lapsList.appendChild(card);
+  });
+}
+
+function startStopwatch() {
+  if (stopwatchState.running) return;
+
+  stopwatchState.running = true;
+  stopwatchState.startTimestamp = Date.now();
+  if (stopwatchState.elapsed === 0) {
+    stopwatchState.lastLapElapsed = 0;
+    stopwatchState.laps = [];
+  }
+  saveStopwatchState();
+  updateControlStates();
+}
+
+function pauseResumeStopwatch() {
+  if (stopwatchState.running) {
+    stopwatchState.elapsed = getStopwatchElapsed(Date.now());
+    stopwatchState.running = false;
+    stopwatchState.startTimestamp = null;
+    saveStopwatchState();
+  } else {
+    stopwatchState.running = true;
+    stopwatchState.startTimestamp = Date.now();
+    saveStopwatchState();
+  }
+  updateControlStates();
+}
+
+function resetStopwatch() {
+  if (stopwatchState.elapsed === 0 && stopwatchState.laps.length === 0) return;
+  stopwatchState = {
+    running: false,
+    elapsed: 0,
+    startTimestamp: null,
+    laps: [],
+    lastLapElapsed: 0,
+  };
+  saveStopwatchState();
+  renderLaps();
+  updateStopwatchDisplay();
+}
+
+function initStopwatch() {
+  const saved = getSavedStopwatch();
+  if (saved) {
+    stopwatchState = saved;
+    if (stopwatchState.running) {
+      const now = Date.now();
+      if (
+        stopwatchState.startTimestamp &&
+        stopwatchState.startTimestamp > now
+      ) {
+        stopwatchState.startTimestamp = now;
+      }
+    }
+  }
+  renderLaps();
+  updateControlStates();
+}
+
+function switchToWorldClock() {
+  switchView("world");
+}
+
+function switchToStopwatch() {
+  switchView("stopwatch");
 }
 
 function initApp() {
+  switchToWorldClock();
+
   const initialHourFormat = getSavedHourFormat();
   setHourFormat(initialHourFormat, true);
   updateClock();
   renderFavorites();
   updateAddFavoriteButtonState();
 
-  timezoneSelect.addEventListener("change", onTimeZoneChange);
+  timezoneSelect.addEventListener("change", () => {
+    updateClock();
+    updateAddFavoriteButtonState();
+  });
   hour24Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_24));
   hour12Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_12));
   addFavoriteButton.addEventListener("click", addFavorite);
-
   favoritesList.addEventListener("click", (event) => {
     const button = event.target.closest(".favorite-remove");
     if (!button) return;
@@ -245,10 +456,25 @@ function initApp() {
     if (timeZone) removeFavorite(timeZone);
   });
 
+  worldClockTab.addEventListener("click", switchToWorldClock);
+  stopwatchTab.addEventListener("click", switchToStopwatch);
+
+  startButton.addEventListener("click", startStopwatch);
+  pauseResumeButton.addEventListener("click", pauseResumeStopwatch);
+  resetButton.addEventListener("click", resetStopwatch);
+  lapButton.addEventListener("click", addLap);
+
+  initStopwatch();
+  renderLaps();
+  updateClock();
+  updateFavoriteTimes();
+
   setInterval(() => {
     updateClock();
     updateFavoriteTimes();
   }, 1000);
+
+  animateStopwatch();
 }
 
 function setHourFormat(format, skipSave = false) {
@@ -265,4 +491,5 @@ window.addEventListener("DOMContentLoaded", initApp);
 window.addEventListener("pageshow", () => {
   updateClock();
   updateFavoriteTimes();
+  initStopwatch();
 });
