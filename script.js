@@ -21,31 +21,90 @@ const STORAGE_FAVORITES = "aiClockFavorites";
 const HOUR_FORMAT_24 = "24";
 const HOUR_FORMAT_12 = "12";
 const MAX_FAVORITES = 5;
+let hasLocalStorage = true;
+
+function safeGetItem(key) {
+  if (!hasLocalStorage) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch (error) {
+    hasLocalStorage = false;
+    return null;
+  }
+}
+
+function safeSetItem(key, value) {
+  if (!hasLocalStorage) return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch (error) {
+    hasLocalStorage = false;
+  }
+}
 
 function getSavedHourFormat() {
-  const saved = localStorage.getItem(STORAGE_HOUR_FORMAT);
+  const saved = safeGetItem(STORAGE_HOUR_FORMAT);
   return saved === HOUR_FORMAT_12 ? HOUR_FORMAT_12 : HOUR_FORMAT_24;
 }
 
 function getSavedFavorites() {
+  const saved = safeGetItem(STORAGE_FAVORITES);
+  if (!saved) return [];
+
   try {
-    const saved = localStorage.getItem(STORAGE_FAVORITES);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
+    const favorites = JSON.parse(saved);
+    return Array.isArray(favorites) ? favorites : [];
+  } catch (error) {
     return [];
   }
 }
 
 function saveFavorites(favorites) {
-  localStorage.setItem(STORAGE_FAVORITES, JSON.stringify(favorites));
+  safeSetItem(STORAGE_FAVORITES, JSON.stringify(favorites));
 }
 
-function setHourFormat(format) {
-  localStorage.setItem(STORAGE_HOUR_FORMAT, format);
-  hour24Button.classList.toggle("active", format === HOUR_FORMAT_24);
-  hour12Button.classList.toggle("active", format === HOUR_FORMAT_12);
-  updateClock();
-  renderFavorites();
+function saveHourFormat(format) {
+  safeSetItem(STORAGE_HOUR_FORMAT, format);
+}
+
+function parseIntlDate(date, options) {
+  try {
+    return new Intl.DateTimeFormat("ja-JP", options).format(date);
+  } catch (error) {
+    return null;
+  }
+}
+
+function fallbackTimeString(date, hourFormat) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  const padded = (value) => String(value).padStart(2, "0");
+
+  if (hourFormat === HOUR_FORMAT_12) {
+    const period = hours < 12 ? "午前" : "午後";
+    const h = hours % 12 || 12;
+    return `${period}${String(h).padStart(2, "0")}:${padded(minutes)}:${padded(seconds)}`;
+  }
+
+  return `${padded(hours)}:${padded(minutes)}:${padded(seconds)}`;
+}
+
+function fallbackDateString(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const weekdays = [
+    "日曜日",
+    "月曜日",
+    "火曜日",
+    "水曜日",
+    "木曜日",
+    "金曜日",
+    "土曜日",
+  ];
+  const weekday = weekdays[date.getDay()];
+  return `${year}年${month}月${day}日${weekday}`;
 }
 
 function formatDateTime(date, timeZone, hourFormat) {
@@ -65,9 +124,13 @@ function formatDateTime(date, timeZone, hourFormat) {
     timeZone,
   };
 
+  const time =
+    parseIntlDate(date, timeOptions) || fallbackTimeString(date, hourFormat);
+  const dateText = parseIntlDate(date, dateOptions) || fallbackDateString(date);
+
   return {
-    time: date.toLocaleTimeString("ja-JP", timeOptions),
-    date: date.toLocaleDateString("ja-JP", dateOptions),
+    time,
+    date: dateText,
   };
 }
 
@@ -79,7 +142,21 @@ function updateClock() {
 
   timeElement.textContent = formatted.time;
   dateElement.textContent = formatted.date;
-  cityNameElement.textContent = cityNames[selectedTimeZone];
+  cityNameElement.textContent = cityNames[selectedTimeZone] || selectedTimeZone;
+}
+
+function updateFavoriteTimes() {
+  const hourFormat = getSavedHourFormat();
+  const cards = favoritesList.querySelectorAll(".favorite-card");
+  cards.forEach((card) => {
+    const timeZone = card.getAttribute("data-timezone");
+    if (!timeZone) return;
+    const formatted = formatDateTime(new Date(), timeZone, hourFormat);
+    const timeElement = card.querySelector(".favorite-time");
+    const dateElement = card.querySelector(".favorite-date");
+    if (timeElement) timeElement.textContent = formatted.time;
+    if (dateElement) dateElement.textContent = formatted.date;
+  });
 }
 
 function renderFavorites() {
@@ -97,17 +174,18 @@ function renderFavorites() {
   }
 
   favorites.forEach((timeZone) => {
-    const { time, date } = formatDateTime(new Date(), timeZone, hourFormat);
+    const formatted = formatDateTime(new Date(), timeZone, hourFormat);
     const card = document.createElement("article");
     card.className = "favorite-card";
+    card.setAttribute("data-timezone", timeZone);
 
     card.innerHTML = `
       <div class="favorite-card-header">
         <p class="favorite-title">${cityNames[timeZone] || timeZone}</p>
         <button type="button" class="favorite-remove" data-timezone="${timeZone}">削除</button>
       </div>
-      <p class="favorite-time">${time}</p>
-      <p class="favorite-date">${date}</p>
+      <p class="favorite-time">${formatted.time}</p>
+      <p class="favorite-date">${formatted.date}</p>
     `;
 
     favoritesList.appendChild(card);
@@ -143,24 +221,48 @@ function removeFavorite(timeZone) {
   renderFavorites();
 }
 
-timezoneSelect.addEventListener("change", () => {
+function onTimeZoneChange() {
   updateClock();
   updateAddFavoriteButtonState();
-});
-hour24Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_24));
-hour12Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_12));
-addFavoriteButton.addEventListener("click", addFavorite);
+}
 
-favoritesList.addEventListener("click", (event) => {
-  const button = event.target.closest(".favorite-remove");
-  if (!button) return;
-  const timeZone = button.getAttribute("data-timezone");
-  if (timeZone) removeFavorite(timeZone);
-});
-
-setHourFormat(getSavedHourFormat());
-renderFavorites();
-setInterval(() => {
+function initApp() {
+  const initialHourFormat = getSavedHourFormat();
+  setHourFormat(initialHourFormat, true);
   updateClock();
   renderFavorites();
-}, 1000);
+  updateAddFavoriteButtonState();
+
+  timezoneSelect.addEventListener("change", onTimeZoneChange);
+  hour24Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_24));
+  hour12Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_12));
+  addFavoriteButton.addEventListener("click", addFavorite);
+
+  favoritesList.addEventListener("click", (event) => {
+    const button = event.target.closest(".favorite-remove");
+    if (!button) return;
+    const timeZone = button.getAttribute("data-timezone");
+    if (timeZone) removeFavorite(timeZone);
+  });
+
+  setInterval(() => {
+    updateClock();
+    updateFavoriteTimes();
+  }, 1000);
+}
+
+function setHourFormat(format, skipSave = false) {
+  if (!skipSave) {
+    saveHourFormat(format);
+  }
+  hour24Button.classList.toggle("active", format === HOUR_FORMAT_24);
+  hour12Button.classList.toggle("active", format === HOUR_FORMAT_12);
+  updateClock();
+  updateFavoriteTimes();
+}
+
+window.addEventListener("DOMContentLoaded", initApp);
+window.addEventListener("pageshow", () => {
+  updateClock();
+  updateFavoriteTimes();
+});
