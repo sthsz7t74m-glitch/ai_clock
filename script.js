@@ -88,6 +88,7 @@ function renderFavorites() {
 
   favoriteCountLabel.textContent = `${favorites.length}/${MAX_FAVORITES}`;
   favoritesList.innerHTML = "";
+  updateAddFavoriteButtonState();
 
   if (favorites.length === 0) {
     favoritesList.innerHTML =
@@ -113,16 +114,22 @@ function renderFavorites() {
   });
 }
 
+function updateAddFavoriteButtonState() {
+  const selectedTimeZone = timezoneSelect.value;
+  const favorites = getSavedFavorites();
+  addFavoriteButton.disabled =
+    favorites.includes(selectedTimeZone) || favorites.length >= MAX_FAVORITES;
+}
+
 function addFavorite() {
   const selectedTimeZone = timezoneSelect.value;
   const favorites = getSavedFavorites();
 
-  if (favorites.includes(selectedTimeZone)) {
+  if (
+    favorites.includes(selectedTimeZone) ||
+    favorites.length >= MAX_FAVORITES
+  ) {
     return;
-  }
-
-  if (favorites.length >= MAX_FAVORITES) {
-    favorites.shift();
   }
 
   favorites.push(selectedTimeZone);
@@ -136,7 +143,10 @@ function removeFavorite(timeZone) {
   renderFavorites();
 }
 
-timezoneSelect.addEventListener("change", updateClock);
+timezoneSelect.addEventListener("change", () => {
+  updateClock();
+  updateAddFavoriteButtonState();
+});
 hour24Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_24));
 hour12Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_12));
 addFavoriteButton.addEventListener("click", addFavorite);
