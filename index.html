@@ -7,17 +7,19 @@
   <title>AI Clock</title>
   <link rel="stylesheet" href="style.css?v=7" />
   <link rel="stylesheet" href="v2.2.css?v=1" />
+  <link rel="stylesheet" href="v2.3.css?v=1" />
 </head>
 <body>
 <main class="clock-app">
   <header class="app-header">
     <div><p class="eyebrow">TIME TOOL</p><h1 class="app-title">AI Clock</h1></div>
-    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.2.0</span></div>
+    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.3.0</span></div>
   </header>
 
   <div class="view-tabs" role="tablist">
     <button id="worldClockTab" class="tab-button active">世界時計</button>
     <button id="convertTab" class="tab-button">変換</button>
+    <button id="meetingTab" class="tab-button">会議</button>
     <button id="stopwatchTab" class="tab-button">ストップウォッチ</button>
     <button id="timerTab" class="tab-button">タイマー</button>
     <button id="alarmTab" class="tab-button">アラーム</button>
@@ -50,6 +52,25 @@
     <section class="favorites-section"><div class="favorites-header"><p class="label section-label">複数都市比較</p><div class="compare-add"><select id="compareCitySelect"></select><button id="addCompareCityButton" class="secondary-button small-button">追加</button></div></div><div id="compareGrid" class="compare-grid"></div></section>
   </section>
 
+  <section id="meetingView" class="hidden">
+    <section class="clock-card meeting-card">
+      <p class="label">会議時間ファインダー</p>
+      <p class="meeting-lead">都市ごとの勤務時間を重ねて、全員が参加しやすい時間を探します。</p>
+      <div class="meeting-toolbar">
+        <label>日付<input id="meetingDate" type="date" /></label>
+        <div class="meeting-add"><select id="meetingCitySelect"></select><button id="addMeetingCityButton" class="secondary-button small-button">都市追加</button></div>
+      </div>
+      <div class="favorites-header meeting-list-header"><p class="label section-label">参加都市</p><p id="meetingCityCount" class="favorite-count">0/4</p></div>
+      <div id="meetingCityList" class="meeting-city-list"></div>
+      <button id="findMeetingTimeButton" class="primary-button wide-button meeting-search-button">おすすめ時間を探す</button>
+      <p id="meetingPlannerStatus" class="timer-status">都市と日付を選んでね</p>
+    </section>
+    <section class="favorites-section">
+      <div class="favorites-header"><p class="label section-label">おすすめ候補</p><button id="copyMeetingResultButton" class="text-button" disabled>ベストをコピー</button></div>
+      <div id="meetingResults" class="meeting-results"></div>
+    </section>
+  </section>
+
   <section id="stopwatchView" class="hidden"><section class="clock-card"><p class="label">ストップウォッチ</p><p id="stopwatchTime" class="stopwatch-time">00:00:00.00</p><div class="stopwatch-controls"><button id="startButton" class="primary-button">開始</button><button id="pauseResumeButton" class="secondary-button">一時停止</button><button id="lapButton" class="secondary-button">ラップ</button><button id="resetButton" class="danger-button">リセット</button></div><div class="laps-wrapper"><div class="favorites-header"><p class="label section-label">ラップ記録</p><button id="clearLapsButton" class="text-button">記録だけ削除</button></div><div id="lapsList" class="laps-list"></div></div></section></section>
 
   <section id="timerView" class="hidden"><section class="clock-card"><p class="label">複数タイマー</p><div class="timer-editor"><input id="timerLabel" placeholder="パスタ" /><div class="timer-inputs"><label>分<input id="timerMinutes" type="number" min="0" max="999" value="5" /></label><label>秒<input id="timerSeconds" type="number" min="0" max="59" value="0" /></label></div><button id="addMultiTimerButton" class="primary-button wide-button">タイマー追加</button></div><div class="quick-timers"><button class="quick-button" data-minutes="1">1分</button><button class="quick-button" data-minutes="3">3分</button><button class="quick-button" data-minutes="5">5分</button><button class="quick-button" data-minutes="10">10分</button><button class="quick-button" data-minutes="15">15分</button><button class="quick-button" data-minutes="30">30分</button></div><div id="multiTimerList" class="timer-list"></div></section><section class="favorites-section"><div class="favorites-header"><p class="label section-label">タイマー履歴</p></div><div id="timerHistory"></div></section></section>
@@ -58,6 +79,6 @@
 
   <div id="alarmOverlay" class="alarm-overlay hidden"><div class="alarm-dialog"><p class="alarm-icon">⏰</p><h2 id="ringingAlarmLabel">アラーム</h2><p id="ringingAlarmTime" class="ringing-time">07:00</p><div class="alarm-dialog-actions"><button id="snoozeAlarmButton" class="secondary-button">5分スヌーズ</button><button id="stopAlarmButton" class="primary-button">停止</button></div></div></div>
 </main>
-<script type="module" src="js/app.js?v=7"></script>
+<script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
