@@ -1,0 +1,165 @@
+:root{
+  --surface-0:#08111f;
+  --surface-1:#0d1726;
+  --surface-2:#111d2f;
+  --surface-3:#162338;
+  --line:rgba(148,163,184,.14);
+  --line-strong:rgba(148,163,184,.24);
+  --text:#f8fafc;
+  --muted:#94a3b8;
+  --muted-2:#64748b;
+  --accent:#38bdf8;
+  --accent-soft:rgba(56,189,248,.12);
+  --danger:#f87171;
+  --radius-lg:22px;
+  --radius-md:15px;
+}
+
+body{background:
+  radial-gradient(circle at 12% -10%,rgba(56,189,248,.12),transparent 34%),
+  radial-gradient(circle at 100% 8%,rgba(99,102,241,.08),transparent 28%),
+  var(--surface-0)}
+
+.clock-app{width:min(96vw,760px);padding:20px 14px 56px}
+.app-header{margin-bottom:16px;padding:0 2px}
+.app-title{font-size:1.6rem;letter-spacing:-.02em}
+.header-actions{gap:10px}.version{background:rgba(148,163,184,.06)}
+
+/* Navigation: group by intent instead of six equal tabs */
+.view-tabs{
+  display:grid!important;
+  grid-template-columns:1fr 1.1fr 1.2fr!important;
+  gap:10px!important;
+  padding:10px;
+  margin-bottom:16px;
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:rgba(13,23,38,.78);
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
+  overflow:visible!important;
+}
+.nav-group{display:grid;gap:6px;min-width:0}
+.nav-group-title{font-size:.66rem;font-weight:800;letter-spacing:.12em;color:var(--muted-2);padding:0 4px;text-transform:uppercase}
+.nav-buttons{display:grid;gap:6px}
+.nav-group.clock-group .nav-buttons{grid-template-columns:1fr 1fr}
+.nav-group.measure-group .nav-buttons{grid-template-columns:1fr 1fr 1fr}
+.nav-group.zone-group .nav-buttons{grid-template-columns:1fr 1fr}
+.tab-button{
+  min-width:0!important;
+  min-height:42px!important;
+  padding:8px 7px!important;
+  border-radius:12px!important;
+  font-size:.76rem!important;
+  font-weight:700;
+  white-space:nowrap;
+}
+.tab-button.active{background:var(--accent-soft)!important;border-color:rgba(56,189,248,.42)!important;color:#e0f2fe!important}
+
+.clock-card{
+  border-radius:var(--radius-lg);
+  padding:24px;
+  background:linear-gradient(180deg,rgba(17,29,47,.94),rgba(13,23,38,.94));
+  border-color:var(--line);
+  box-shadow:0 16px 42px rgba(0,0,0,.2);
+}
+.label{margin-bottom:16px;color:var(--muted-2);font-size:.72rem;letter-spacing:.16em}
+
+/* Inputs become one consistent visual language */
+input,select{min-height:44px}
+.city-search-wrap,.timezone-picker{justify-content:stretch;display:grid;grid-template-columns:82px 1fr;gap:10px;margin-bottom:10px;text-align:left}
+.city-search,#timezoneSelect{width:100%;min-width:0!important}
+.picker-label{align-self:center;color:var(--muted);font-size:.8rem}
+.convert-grid,.alarm-editor,.meeting-toolbar{gap:12px!important}
+.convert-grid label,.alarm-editor label,.meeting-toolbar label,.timer-inputs label{color:var(--muted);font-weight:600}
+.convert-grid input,.convert-grid select,.alarm-editor input,.alarm-editor select,.meeting-toolbar input,.meeting-toolbar select,.timer-inputs input,.timer-editor>input,.natural-convert input,.compare-add select{
+  background:var(--surface-1)!important;
+  border:1px solid var(--line-strong)!important;
+  border-radius:12px!important;
+}
+
+/* World clock hierarchy */
+.city-name{margin-top:16px;margin-bottom:4px;font-size:1.05rem;color:#cbd5e1}
+.analog-clock{margin-top:14px!important}
+.hero-time{margin-top:8px}
+.hero-date{font-size:.92rem}
+.time-meta{margin:12px 0 2px}
+.setting-row{margin:16px 0 8px;padding-top:14px;border-top:1px solid var(--line)}
+.format-toggle{margin:8px 0 14px}
+
+/* Sections */
+.favorites-section{margin-top:16px;padding:16px;border:1px solid var(--line);border-radius:18px;background:rgba(13,23,38,.5)}
+.favorites-header{margin-bottom:12px}
+.section-label{font-size:.72rem}
+.favorite-card,.lap-card,.alarm-item,.timer-item,.meeting-city-card,.meeting-result-card,.compare-card{
+  background:var(--surface-1)!important;
+  border-color:var(--line)!important;
+  border-radius:15px!important;
+}
+
+/* Buttons */
+.primary-button,.secondary-button,.danger-button{border-radius:12px!important;min-height:44px!important}
+.primary-button{background:var(--accent)!important;color:#082f49!important}
+.secondary-button{background:rgba(148,163,184,.1)!important;color:#e2e8f0!important;border:1px solid var(--line)!important}
+.danger-button{background:rgba(248,113,113,.10)!important;color:#fecaca!important;border:1px solid rgba(248,113,113,.12)!important}
+.text-button{color:var(--muted)!important}
+
+/* Converter */
+.convert-result{margin:14px 0!important;border:1px solid rgba(56,189,248,.13);background:rgba(56,189,248,.06)!important}
+.natural-convert{padding-top:12px;border-top:1px solid var(--line)}
+.compare-add{align-items:center}
+
+/* Stopwatch & timer */
+.stopwatch-time{margin:14px 0 22px!important}
+.stopwatch-controls{gap:8px!important}
+.quick-timers{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.timer-editor{padding:0!important}
+.timer-list{margin-top:14px}
+.history-row:last-child{border-bottom:0}
+
+/* Alarm */
+.weekday-picker{margin-top:6px;margin-bottom:16px!important}
+.weekday-button{border-radius:10px!important}
+.alarm-note{padding-top:12px;border-top:1px solid var(--line);margin-top:14px!important}
+
+/* Meeting planner: separate configuration from output */
+.meeting-card .meeting-lead{margin:-4px auto 18px;max-width:34rem;color:var(--muted);font-size:.84rem;line-height:1.65}
+.meeting-toolbar{padding:14px;border-radius:15px;background:rgba(8,17,31,.55);border:1px solid var(--line);margin-bottom:16px}
+.meeting-list-header{margin-top:4px}
+.meeting-city-list{gap:8px!important}
+.meeting-search-button{margin-top:14px!important}
+#meetingPlannerStatus{margin-top:10px!important}
+.meeting-result-card.best{box-shadow:0 0 0 1px rgba(56,189,248,.18),0 12px 30px rgba(0,0,0,.15)}
+.meeting-time-row{padding:8px 10px!important;border-radius:10px}
+
+@media(max-width:680px){
+  .clock-app{width:100%;padding:12px 10px 44px}
+  .app-header{margin-bottom:12px}
+  .app-title{font-size:1.35rem}
+  .view-tabs{
+    grid-template-columns:1fr!important;
+    gap:8px!important;
+    padding:8px;
+  }
+  .nav-group{grid-template-columns:68px 1fr;align-items:center}
+  .nav-group-title{padding:0 2px;font-size:.62rem}
+  .nav-group.clock-group .nav-buttons{grid-template-columns:1fr 1fr}
+  .nav-group.measure-group .nav-buttons{grid-template-columns:repeat(3,1fr)}
+  .nav-group.zone-group .nav-buttons{grid-template-columns:1fr 1fr}
+  .tab-button{font-size:.7rem!important;min-height:40px!important}
+  .clock-card{padding:18px 14px;border-radius:18px}
+  .favorites-section{padding:12px;border-radius:16px}
+  .city-search-wrap,.timezone-picker{grid-template-columns:66px 1fr}
+  .hero-time{font-size:clamp(2.35rem,13vw,4rem)}
+  .analog-clock{width:96px!important;height:96px!important}
+  .convert-grid,.alarm-editor{grid-template-columns:1fr!important}
+  .meeting-toolbar{grid-template-columns:1fr!important}
+  .stopwatch-controls{grid-template-columns:1fr 1fr!important}
+}
+
+@media(max-width:390px){
+  .nav-group{grid-template-columns:1fr;gap:4px}
+  .nav-group-title{padding-left:3px}
+  .nav-group.measure-group .nav-buttons{grid-template-columns:1fr 1fr 1fr}
+  .tab-button{font-size:.66rem!important}
+  .header-actions .text-button{font-size:.72rem}
+}
