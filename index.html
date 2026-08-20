@@ -4,41 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>AI Clock</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="style.css?v=7" />
   <link rel="stylesheet" href="v2.2.css?v=1" />
   <link rel="stylesheet" href="v2.3.css?v=1" />
   <link rel="stylesheet" href="v2.4.css?v=1" />
+  <link rel="stylesheet" href="v2.4-settings.css?v=1" />
 </head>
 <body>
 <main class="clock-app">
   <header class="app-header">
     <div><p class="eyebrow">TIME TOOL</p><h1 class="app-title">AI Clock</h1></div>
-    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.3.1</span></div>
+    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><button id="settingsTab" class="settings-button">設定</button><span class="version">v2.4.0</span></div>
   </header>
 
   <nav class="view-tabs" role="tablist" aria-label="機能切り替え">
-    <div class="nav-group clock-group">
-      <span class="nav-group-title">CLOCK</span>
-      <div class="nav-buttons">
-        <button id="worldClockTab" class="tab-button active">世界時計</button>
-        <button id="alarmTab" class="tab-button">アラーム</button>
-      </div>
-    </div>
-    <div class="nav-group measure-group">
-      <span class="nav-group-title">MEASURE</span>
-      <div class="nav-buttons">
-        <button id="stopwatchTab" class="tab-button">ストップウォッチ</button>
-        <button id="timerTab" class="tab-button">タイマー</button>
-      </div>
-    </div>
-    <div class="nav-group zone-group">
-      <span class="nav-group-title">TIME ZONE</span>
-      <div class="nav-buttons">
-        <button id="convertTab" class="tab-button">変換</button>
-        <button id="meetingTab" class="tab-button">会議</button>
-      </div>
-    </div>
+    <div class="nav-group clock-group"><span class="nav-group-title">CLOCK</span><div class="nav-buttons"><button id="worldClockTab" class="tab-button active">世界時計</button><button id="alarmTab" class="tab-button">アラーム</button></div></div>
+    <div class="nav-group measure-group"><span class="nav-group-title">MEASURE</span><div class="nav-buttons"><button id="stopwatchTab" class="tab-button">ストップウォッチ</button><button id="timerTab" class="tab-button">タイマー</button></div></div>
+    <div class="nav-group zone-group"><span class="nav-group-title">TIME ZONE</span><div class="nav-buttons"><button id="convertTab" class="tab-button">変換</button><button id="meetingTab" class="tab-button">会議</button></div></div>
   </nav>
 
   <section id="worldClockView">
@@ -50,7 +37,6 @@
       <div id="analogClock" class="analog-clock" aria-label="アナログ時計"><span class="hand hour"></span><span class="hand minute"></span><span class="hand second"></span><span class="pin"></span></div>
       <p id="time" class="hero-time">--:--:--</p><p id="date" class="hero-date">----</p>
       <div class="time-meta"><span id="utcOffset" class="meta-chip">UTC+09:00</span><span id="dstStatus" class="meta-chip">標準時</span></div>
-      <div class="setting-row"><span>秒表示</span><label class="switch"><input id="secondsToggle" type="checkbox" checked /><span></span></label></div>
       <div class="format-toggle"><button id="hour24Button" class="toggle-button active">24時間</button><button id="hour12Button" class="toggle-button">12時間</button></div>
       <button id="addFavoriteButton" class="primary-button">お気に入りに追加</button>
     </section>
@@ -58,33 +44,13 @@
   </section>
 
   <section id="convertView" class="hidden">
-    <section class="clock-card">
-      <p class="label">タイムゾーン変換</p>
-      <div class="convert-grid"><label>変換元<select id="convertFrom"></select></label><label>変換先<select id="convertTo"></select></label><label>日付<input id="convertDate" type="date" /></label><label>時刻<input id="convertTime" type="time" /></label></div>
-      <button id="convertButton" class="primary-button wide-button">変換</button>
-      <div id="convertResult" class="convert-result">都市と時刻を選んで変換</div>
-      <div class="natural-convert"><input id="naturalConvertInput" placeholder="東京18:00→ロンドン" /><button id="naturalConvertButton" class="secondary-button">自然入力で変換</button></div>
-    </section>
+    <section class="clock-card"><p class="label">タイムゾーン変換</p><div class="convert-grid"><label>変換元<select id="convertFrom"></select></label><label>変換先<select id="convertTo"></select></label><label>日付<input id="convertDate" type="date" /></label><label>時刻<input id="convertTime" type="time" /></label></div><button id="convertButton" class="primary-button wide-button">変換</button><div id="convertResult" class="convert-result">都市と時刻を選んで変換</div><div class="natural-convert"><input id="naturalConvertInput" placeholder="東京18:00→ロンドン" /><button id="naturalConvertButton" class="secondary-button">自然入力で変換</button></div></section>
     <section class="favorites-section"><div class="favorites-header"><p class="label section-label">複数都市比較</p><div class="compare-add"><select id="compareCitySelect"></select><button id="addCompareCityButton" class="secondary-button small-button">追加</button></div></div><div id="compareGrid" class="compare-grid"></div></section>
   </section>
 
   <section id="meetingView" class="hidden">
-    <section class="clock-card meeting-card">
-      <p class="label">会議時間ファインダー</p>
-      <p class="meeting-lead">都市ごとの勤務時間を重ねて、全員が参加しやすい時間を探します。</p>
-      <div class="meeting-toolbar">
-        <label>日付<input id="meetingDate" type="date" /></label>
-        <div class="meeting-add"><select id="meetingCitySelect"></select><button id="addMeetingCityButton" class="secondary-button small-button">都市追加</button></div>
-      </div>
-      <div class="favorites-header meeting-list-header"><p class="label section-label">参加都市</p><p id="meetingCityCount" class="favorite-count">0/4</p></div>
-      <div id="meetingCityList" class="meeting-city-list"></div>
-      <button id="findMeetingTimeButton" class="primary-button wide-button meeting-search-button">おすすめ時間を探す</button>
-      <p id="meetingPlannerStatus" class="timer-status">都市と日付を選んでね</p>
-    </section>
-    <section class="favorites-section">
-      <div class="favorites-header"><p class="label section-label">おすすめ候補</p><button id="copyMeetingResultButton" class="text-button" disabled>ベストをコピー</button></div>
-      <div id="meetingResults" class="meeting-results"></div>
-    </section>
+    <section class="clock-card meeting-card"><p class="label">会議時間ファインダー</p><p class="meeting-lead">都市ごとの勤務時間を重ねて、全員が参加しやすい時間を探します。</p><div class="meeting-toolbar"><label>日付<input id="meetingDate" type="date" /></label><div class="meeting-add"><select id="meetingCitySelect"></select><button id="addMeetingCityButton" class="secondary-button small-button">都市追加</button></div></div><div class="favorites-header meeting-list-header"><p class="label section-label">参加都市</p><p id="meetingCityCount" class="favorite-count">0/4</p></div><div id="meetingCityList" class="meeting-city-list"></div><button id="findMeetingTimeButton" class="primary-button wide-button meeting-search-button">おすすめ時間を探す</button><p id="meetingPlannerStatus" class="timer-status">都市と日付を選んでね</p></section>
+    <section class="favorites-section"><div class="favorites-header"><p class="label section-label">おすすめ候補</p><button id="copyMeetingResultButton" class="text-button" disabled>ベストをコピー</button></div><div id="meetingResults" class="meeting-results"></div></section>
   </section>
 
   <section id="stopwatchView" class="hidden"><section class="clock-card"><p class="label">ストップウォッチ</p><p id="stopwatchTime" class="stopwatch-time">00:00:00.00</p><div class="stopwatch-controls"><button id="startButton" class="primary-button">開始</button><button id="pauseResumeButton" class="secondary-button">一時停止</button><button id="lapButton" class="secondary-button">ラップ</button><button id="resetButton" class="danger-button">リセット</button></div><div class="laps-wrapper"><div class="favorites-header"><p class="label section-label">ラップ記録</p><button id="clearLapsButton" class="text-button">記録だけ削除</button></div><div id="lapsList" class="laps-list"></div></div></section></section>
@@ -93,8 +59,21 @@
 
   <section id="alarmView" class="hidden"><section class="clock-card"><p class="label">アラーム</p><div class="alarm-editor"><label>時刻<input id="alarmTime" type="time" value="07:00" /></label><label>ラベル<input id="alarmLabel" type="text" placeholder="起床" /></label><label>音<select id="alarmSound"><option value="beep">標準</option><option value="soft">やさしい</option><option value="high">高音</option></select></label><label>スヌーズ<input id="snoozeMinutes" type="number" min="1" max="60" value="5" /></label></div><div class="weekday-picker"><button class="weekday-button" data-day="1">月</button><button class="weekday-button" data-day="2">火</button><button class="weekday-button" data-day="3">水</button><button class="weekday-button" data-day="4">木</button><button class="weekday-button" data-day="5">金</button><button class="weekday-button" data-day="6">土</button><button class="weekday-button" data-day="0">日</button></div><button id="addAlarmButton" class="primary-button wide-button">アラームを追加</button><p class="alarm-note">編集ボタンで既存アラームをフォームへ戻して変更できます。</p></section><section class="favorites-section"><div class="favorites-header"><p class="label section-label">登録済み</p><p id="alarmCount" class="favorite-count">0件</p></div><div id="alarmList" class="alarm-list"></div></section></section>
 
+  <section id="settingsView" class="hidden">
+    <section class="clock-card">
+      <p class="label">設定</p>
+      <div class="settings-list">
+        <div class="settings-row"><div class="settings-copy"><strong>テーマ</strong><span>端末設定に合わせるか、明るさを固定します。</span></div><select id="themeSelect"><option value="system">システム</option><option value="dark">ダーク</option><option value="light">ライト</option></select></div>
+        <div class="settings-row"><div class="settings-copy"><strong>秒表示</strong><span>世界時計の秒を表示します。</span></div><label class="switch"><input id="secondsToggle" type="checkbox" checked /><span></span></label></div>
+        <div class="settings-row"><div class="settings-copy"><strong>画面スリープ防止</strong><span id="wakeLockStatus">確認中...</span></div><label class="switch"><input id="keepAwakeToggle" type="checkbox" /><span></span></label></div>
+        <div class="settings-row"><div class="settings-copy"><strong>動きを減らす</strong><span>アニメーションや画面遷移を最小限にします。</span></div><label class="switch"><input id="reduceMotionToggle" type="checkbox" /><span></span></label></div>
+      </div>
+      <div class="install-block"><button id="installAppButton" class="primary-button wide-button hidden">AI Clockをインストール</button><p id="installStatus" class="install-status">ホーム画面から起動できるPWAに対応しています。</p></div>
+    </section>
+  </section>
+
   <div id="alarmOverlay" class="alarm-overlay hidden"><div class="alarm-dialog"><p class="alarm-icon">⏰</p><h2 id="ringingAlarmLabel">アラーム</h2><p id="ringingAlarmTime" class="ringing-time">07:00</p><div class="alarm-dialog-actions"><button id="snoozeAlarmButton" class="secondary-button">5分スヌーズ</button><button id="stopAlarmButton" class="primary-button">停止</button></div></div></div>
 </main>
-<script type="module" src="js/app.js?v=8"></script>
+<script type="module" src="js/app.js?v=9"></script>
 </body>
 </html>
