@@ -1,10 +1,12 @@
 import { $ } from './core.js';
+import { MeetingPlannerService } from './meeting-planner-service.js';
 
 export class MeetingPlannerController {
   constructor(storage, cities, formatter) {
     this.storage = storage;
     this.cities = cities;
     this.formatter = formatter;
+    this.service = new MeetingPlannerService(cities, formatter);
     this.participants = this.storage.get('meetingCities', []);
     this.workHours = this.storage.get('meetingWorkHours', {});
   }
@@ -68,7 +70,9 @@ export class MeetingPlannerController {
     const current = this.hoursFor(zone);
     const value = Math.max(0, Math.min(24, Number(input.value)));
     this.workHours[zone] = { ...current, [kind]: Number.isFinite(value) ? value : current[kind] };
-    if (this.workHours[zone].end <= this.workHours[zone].start) this.workHours[zone].end = Math.min(24, this.workHours[zone].start + 1);
+    if (this.workHours[zone].end <= this.workHours[zone].start) {
+      this.workHours[zone].end = Math.min(24, this.workHours[zone].start + 1);
+    }
     this.save();
     this.findTimes();
   }
@@ -108,46 +112,9 @@ export class MeetingPlannerController {
 
   findTimes() {
     const date = $('meetingDate').value;
-    if (!date || !this.participants.length) return;
-    const referenceZone = this.participants[0];
-    const candidates = [];
-    for (let minutes = 0; minutes < 24 * 60; minutes += 30) {
-      const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
-      const mm = String(minutes % 60).padStart(2, '0');
-      const instant = this.formatter.localDateToInstant(date, `${hh}:${mm}`, referenceZone);
-      const rows = this.participants.map((zone) => this.localStatus(instant, zone));
-      const inWorkCount = rows.filter((row) => row.inWork).length;
-      const score = rows.reduce((sum, row) => sum + this.rowScore(row), 0);
-      candidates.push({ instant, rows, inWorkCount, score, exact: inWorkCount === rows.length });
-    }
-    const exact = candidates.filter((item) => item.exact);
-    const pool = exact.length ? exact : candidates.sort((a, b) => b.score - a.score || a.instant - b.instant);
-    this.renderResults(pool.slice(0, 6), exact.length > 0);
-  }
-
-  localStatus(instant, zone) {
-    const parts = this.formatter.parts(instant, zone);
-    const hour = Number(parts.hour) + Number(parts.minute) / 60;
-    const hours = this.hoursFor(zone);
-    const inWork = hour >= hours.start && hour < hours.end;
-    const city = this.cities.find(zone);
-    return {
-      zone,
-      city: city?.ja || zone,
-      time: `${parts.hour}:${parts.minute}`,
-      date: `${parts.year}/${parts.month}/${parts.day}`,
-      hour,
-      inWork,
-      work: hours
-    };
-  }
-
-  rowScore(row) {
-    if (row.inWork) return 100;
-    const before = row.hour < row.work.start ? row.work.start - row.hour : Infinity;
-    const after = row.hour >= row.work.end ? row.hour - row.work.end : Infinity;
-    const distance = Math.min(before, after);
-    return Math.max(0, 70 - distance * 15);
+    const hours = Object.fromEntries(this.participants.map((zone) => [zone, this.hoursFor(zone)]));
+    const result = this.service.find({ date, zones: this.participants, workHours: hours });
+    this.renderResults(result.items, result.hasExact);
   }
 
   renderResults(items, hasExact) {
