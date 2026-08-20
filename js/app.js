@@ -5,12 +5,14 @@ import { TimerController } from './timer.js';
 import { AlarmController } from './alarm.js';
 import { ConverterController } from './converter.js';
 import { MeetingPlannerController } from './meeting-planner.js';
+import { SettingsController, WakeLockService } from './settings.js';
 
 class App {
   constructor(){
     this.storage=new StorageService();
     this.cities=new CityRepository();
     this.formatter=new TimeFormatter();
+    this.wakeLock=new WakeLockService();
   }
   init(){
     this.tabs=new TabController([
@@ -19,11 +21,12 @@ class App {
       {name:'meeting',button:$('meetingTab'),panel:$('meetingView')},
       {name:'stopwatch',button:$('stopwatchTab'),panel:$('stopwatchView')},
       {name:'timer',button:$('timerTab'),panel:$('timerView')},
-      {name:'alarm',button:$('alarmTab'),panel:$('alarmView')}
+      {name:'alarm',button:$('alarmTab'),panel:$('alarmView')},
+      {name:'settings',button:$('settingsTab'),panel:$('settingsView')}
     ]);
     [
       ['worldClockTab','world'],['convertTab','convert'],['meetingTab','meeting'],
-      ['stopwatchTab','stopwatch'],['timerTab','timer'],['alarmTab','alarm']
+      ['stopwatchTab','stopwatch'],['timerTab','timer'],['alarmTab','alarm'],['settingsTab','settings']
     ].forEach(([id,name])=>$(id).onclick=()=>this.tabs.show(name));
 
     this.world=new WorldClockController(this.storage,this.cities); this.world.init();
@@ -32,6 +35,7 @@ class App {
     this.alarm=new AlarmController(this.storage); this.alarm.init();
     this.converter=new ConverterController(this.cities); this.converter.init();
     this.meeting=new MeetingPlannerController(this.storage,this.cities,this.formatter); this.meeting.init();
+    this.settings=new SettingsController(this.storage,this.wakeLock); this.settings.init();
 
     document.querySelectorAll('.weekday-button').forEach((b)=>b.addEventListener('click',()=>b.classList.toggle('active')));
     $('hour24Button').onclick=()=>this.setHourFormat('24');
@@ -39,6 +43,7 @@ class App {
     this.setHourFormat(this.storage.get('hourFormat','24'));
     $('fullscreenButton').onclick=()=>this.toggleFullscreen();
     this.tabs.show('world');
+    this.registerServiceWorker();
   }
   setHourFormat(v){
     this.storage.set('hourFormat',v);
@@ -52,6 +57,11 @@ class App {
       if(!document.fullscreenElement) await document.documentElement.requestFullscreen();
       else await document.exitFullscreen();
     }catch{}
+  }
+  registerServiceWorker(){
+    if('serviceWorker' in navigator){
+      window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+    }
   }
 }
 
