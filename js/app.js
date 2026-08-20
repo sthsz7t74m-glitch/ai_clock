@@ -6,6 +6,9 @@ import { AlarmController } from './alarm.js';
 import { ConverterController } from './converter.js';
 import { MeetingPlannerController } from './meeting-planner.js';
 import { SettingsController, WakeLockService } from './settings.js';
+import { NotificationService } from './notification.js';
+import { DashboardController } from './dashboard.js';
+import { ShortcutRouter } from './shortcut-router.js';
 
 class App {
   constructor(){
@@ -13,9 +16,11 @@ class App {
     this.cities=new CityRepository();
     this.formatter=new TimeFormatter();
     this.wakeLock=new WakeLockService();
+    this.notifier=new NotificationService(this.storage);
   }
   init(){
     this.tabs=new TabController([
+      {name:'home',button:$('homeTab'),panel:$('homeView')},
       {name:'world',button:$('worldClockTab'),panel:$('worldClockView')},
       {name:'convert',button:$('convertTab'),panel:$('convertView')},
       {name:'meeting',button:$('meetingTab'),panel:$('meetingView')},
@@ -25,25 +30,27 @@ class App {
       {name:'settings',button:$('settingsTab'),panel:$('settingsView')}
     ]);
     [
-      ['worldClockTab','world'],['convertTab','convert'],['meetingTab','meeting'],
+      ['homeTab','home'],['worldClockTab','world'],['convertTab','convert'],['meetingTab','meeting'],
       ['stopwatchTab','stopwatch'],['timerTab','timer'],['alarmTab','alarm'],['settingsTab','settings']
-    ].forEach(([id,name])=>$(id).onclick=()=>this.tabs.show(name));
+    ].forEach(([id,name])=>{ const el=$(id); if(el) el.onclick=()=>{ this.storage.set('lastView',name); this.tabs.show(name); }; });
 
     this.world=new WorldClockController(this.storage,this.cities); this.world.init();
     this.stopwatch=new StopwatchController(this.storage); this.stopwatch.init();
-    this.timer=new TimerController(this.storage); this.timer.init();
-    this.alarm=new AlarmController(this.storage); this.alarm.init();
+    this.timer=new TimerController(this.storage,this.notifier); this.timer.init();
+    this.alarm=new AlarmController(this.storage,this.notifier); this.alarm.init();
     this.converter=new ConverterController(this.cities); this.converter.init();
     this.meeting=new MeetingPlannerController(this.storage,this.cities,this.formatter); this.meeting.init();
-    this.settings=new SettingsController(this.storage,this.wakeLock); this.settings.init();
+    this.settings=new SettingsController(this.storage,this.wakeLock,this.notifier); this.settings.init();
+    this.dashboard=new DashboardController(this.storage,this.cities,this.formatter,this.tabs); this.dashboard.init();
+    this.shortcuts=new ShortcutRouter(this.storage,this.tabs);
 
     document.querySelectorAll('.weekday-button').forEach((b)=>b.addEventListener('click',()=>b.classList.toggle('active')));
     $('hour24Button').onclick=()=>this.setHourFormat('24');
     $('hour12Button').onclick=()=>this.setHourFormat('12');
     this.setHourFormat(this.storage.get('hourFormat','24'));
     $('fullscreenButton').onclick=()=>this.toggleFullscreen();
-    this.tabs.show('world');
     this.registerServiceWorker();
+    this.shortcuts.apply();
   }
   setHourFormat(v){
     this.storage.set('hourFormat',v);
