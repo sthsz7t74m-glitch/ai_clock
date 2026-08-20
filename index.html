@@ -8,22 +8,38 @@
   <link rel="stylesheet" href="style.css?v=7" />
   <link rel="stylesheet" href="v2.2.css?v=1" />
   <link rel="stylesheet" href="v2.3.css?v=1" />
+  <link rel="stylesheet" href="v2.4.css?v=1" />
 </head>
 <body>
 <main class="clock-app">
   <header class="app-header">
     <div><p class="eyebrow">TIME TOOL</p><h1 class="app-title">AI Clock</h1></div>
-    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.3.0</span></div>
+    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.3.1</span></div>
   </header>
 
-  <div class="view-tabs" role="tablist">
-    <button id="worldClockTab" class="tab-button active">世界時計</button>
-    <button id="convertTab" class="tab-button">変換</button>
-    <button id="meetingTab" class="tab-button">会議</button>
-    <button id="stopwatchTab" class="tab-button">ストップウォッチ</button>
-    <button id="timerTab" class="tab-button">タイマー</button>
-    <button id="alarmTab" class="tab-button">アラーム</button>
-  </div>
+  <nav class="view-tabs" role="tablist" aria-label="機能切り替え">
+    <div class="nav-group clock-group">
+      <span class="nav-group-title">CLOCK</span>
+      <div class="nav-buttons">
+        <button id="worldClockTab" class="tab-button active">世界時計</button>
+        <button id="alarmTab" class="tab-button">アラーム</button>
+      </div>
+    </div>
+    <div class="nav-group measure-group">
+      <span class="nav-group-title">MEASURE</span>
+      <div class="nav-buttons">
+        <button id="stopwatchTab" class="tab-button">ストップウォッチ</button>
+        <button id="timerTab" class="tab-button">タイマー</button>
+      </div>
+    </div>
+    <div class="nav-group zone-group">
+      <span class="nav-group-title">TIME ZONE</span>
+      <div class="nav-buttons">
+        <button id="convertTab" class="tab-button">変換</button>
+        <button id="meetingTab" class="tab-button">会議</button>
+      </div>
+    </div>
+  </nav>
 
   <section id="worldClockView">
     <section class="clock-card">
