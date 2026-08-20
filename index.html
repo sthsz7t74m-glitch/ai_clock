@@ -1,157 +1,62 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0f172a" />
-    <title>AI Clock</title>
-    <link rel="stylesheet" href="style.css?v=6" />
-  </head>
-  <body>
-    <main class="clock-app">
-      <header class="app-header">
-        <div>
-          <p class="eyebrow">TIME TOOL</p>
-          <h1 class="app-title">AI Clock</h1>
-        </div>
-        <span class="version">v2.1.0</span>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>AI Clock</title>
+  <link rel="stylesheet" href="style.css?v=7" />
+</head>
+<body>
+<main class="clock-app">
+  <header class="app-header">
+    <div><p class="eyebrow">TIME TOOL</p><h1 class="app-title">AI Clock</h1></div>
+    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><span class="version">v2.2.0</span></div>
+  </header>
 
-      <div class="view-tabs" role="tablist" aria-label="表示切り替え">
-        <button type="button" id="worldClockTab" class="tab-button active" role="tab" aria-selected="true">世界時計</button>
-        <button type="button" id="stopwatchTab" class="tab-button" role="tab" aria-selected="false">ストップウォッチ</button>
-        <button type="button" id="timerTab" class="tab-button" role="tab" aria-selected="false">タイマー</button>
-        <button type="button" id="alarmTab" class="tab-button" role="tab" aria-selected="false">アラーム</button>
-      </div>
+  <div class="view-tabs" role="tablist">
+    <button id="worldClockTab" class="tab-button active">世界時計</button>
+    <button id="convertTab" class="tab-button">変換</button>
+    <button id="stopwatchTab" class="tab-button">ストップウォッチ</button>
+    <button id="timerTab" class="tab-button">タイマー</button>
+    <button id="alarmTab" class="tab-button">アラーム</button>
+  </div>
 
-      <section id="worldClockView">
-        <section class="clock-card" aria-live="polite">
-          <p class="label">現在時刻</p>
-          <div class="city-search-wrap">
-            <label class="picker-label" for="citySearch">都市検索</label>
-            <input id="citySearch" class="city-search" type="search" placeholder="東京 / London / Seoul..." autocomplete="off" />
-          </div>
-          <div class="timezone-picker">
-            <label class="picker-label" for="timezoneSelect">地域</label>
-            <select id="timezoneSelect" aria-label="タイムゾーンを選択"></select>
-          </div>
-          <p id="cityName" class="city-name">東京</p>
-          <p id="time" class="hero-time">--:--:--</p>
-          <p id="date" class="hero-date">----</p>
-          <div class="time-meta">
-            <span id="utcOffset" class="meta-chip">UTC+09:00</span>
-            <span id="dstStatus" class="meta-chip">標準時</span>
-          </div>
-          <div class="format-toggle" role="group" aria-label="時刻表示形式切り替え">
-            <button type="button" id="hour24Button" class="toggle-button active">24時間</button>
-            <button type="button" id="hour12Button" class="toggle-button">12時間</button>
-          </div>
-          <button type="button" id="addFavoriteButton" class="primary-button">お気に入りに追加</button>
-        </section>
+  <section id="worldClockView">
+    <section class="clock-card">
+      <p class="label">現在時刻</p>
+      <div class="city-search-wrap"><label class="picker-label" for="citySearch">都市検索</label><input id="citySearch" class="city-search" type="search" placeholder="東京 / London / Seoul..." /></div>
+      <div class="timezone-picker"><label class="picker-label" for="timezoneSelect">地域</label><select id="timezoneSelect"></select></div>
+      <p id="cityName" class="city-name">東京</p>
+      <div id="analogClock" class="analog-clock" aria-label="アナログ時計"><span class="hand hour"></span><span class="hand minute"></span><span class="hand second"></span><span class="pin"></span></div>
+      <p id="time" class="hero-time">--:--:--</p><p id="date" class="hero-date">----</p>
+      <div class="time-meta"><span id="utcOffset" class="meta-chip">UTC+09:00</span><span id="dstStatus" class="meta-chip">標準時</span></div>
+      <div class="setting-row"><span>秒表示</span><label class="switch"><input id="secondsToggle" type="checkbox" checked /><span></span></label></div>
+      <div class="format-toggle"><button id="hour24Button" class="toggle-button active">24時間</button><button id="hour12Button" class="toggle-button">12時間</button></div>
+      <button id="addFavoriteButton" class="primary-button">お気に入りに追加</button>
+    </section>
+    <section class="favorites-section"><div class="favorites-header"><p class="label section-label">お気に入り都市</p><p id="favoriteCount" class="favorite-count">0/8</p></div><div id="favoritesList" class="favorites-list"></div></section>
+  </section>
 
-        <section class="favorites-section" aria-live="polite">
-          <div class="favorites-header">
-            <p class="label section-label">お気に入り都市</p>
-            <p id="favoriteCount" class="favorite-count">0/8</p>
-          </div>
-          <div id="favoritesList" class="favorites-list">
-            <p class="empty-message">お気に入りはまだありません</p>
-          </div>
-        </section>
-      </section>
+  <section id="convertView" class="hidden">
+    <section class="clock-card">
+      <p class="label">タイムゾーン変換</p>
+      <div class="convert-grid"><label>変換元<select id="convertFrom"></select></label><label>変換先<select id="convertTo"></select></label><label>日付<input id="convertDate" type="date" /></label><label>時刻<input id="convertTime" type="time" /></label></div>
+      <button id="convertButton" class="primary-button wide-button">変換</button>
+      <div id="convertResult" class="convert-result">都市と時刻を選んで変換</div>
+      <div class="natural-convert"><input id="naturalConvertInput" placeholder="東京18:00→ロンドン" /><button id="naturalConvertButton" class="secondary-button">自然入力で変換</button></div>
+    </section>
+    <section class="favorites-section"><div class="favorites-header"><p class="label section-label">複数都市比較</p><div class="compare-add"><select id="compareCitySelect"></select><button id="addCompareCityButton" class="secondary-button small-button">追加</button></div></div><div id="compareGrid" class="compare-grid"></div></section>
+  </section>
 
-      <section id="stopwatchView" class="hidden" aria-live="polite">
-        <section class="clock-card stopwatch-card">
-          <p class="label">ストップウォッチ</p>
-          <p id="stopwatchTime" class="stopwatch-time">00:00:00.00</p>
-          <div class="stopwatch-controls">
-            <button type="button" id="startButton" class="primary-button">開始</button>
-            <button type="button" id="pauseResumeButton" class="secondary-button" disabled>一時停止</button>
-            <button type="button" id="lapButton" class="secondary-button" disabled>ラップ</button>
-            <button type="button" id="resetButton" class="danger-button" disabled>リセット</button>
-          </div>
-          <div class="laps-wrapper">
-            <div class="favorites-header">
-              <p class="label section-label">ラップ記録</p>
-              <button type="button" id="clearLapsButton" class="text-button">記録だけ削除</button>
-            </div>
-            <div id="lapsList" class="laps-list">
-              <p class="empty-message">ラップはまだありません</p>
-            </div>
-          </div>
-        </section>
-      </section>
+  <section id="stopwatchView" class="hidden"><section class="clock-card"><p class="label">ストップウォッチ</p><p id="stopwatchTime" class="stopwatch-time">00:00:00.00</p><div class="stopwatch-controls"><button id="startButton" class="primary-button">開始</button><button id="pauseResumeButton" class="secondary-button">一時停止</button><button id="lapButton" class="secondary-button">ラップ</button><button id="resetButton" class="danger-button">リセット</button></div><div class="laps-wrapper"><div class="favorites-header"><p class="label section-label">ラップ記録</p><button id="clearLapsButton" class="text-button">記録だけ削除</button></div><div id="lapsList" class="laps-list"></div></div></section></section>
 
-      <section id="timerView" class="hidden" aria-live="polite">
-        <section class="clock-card timer-card">
-          <p class="label">タイマー</p>
-          <p id="timerTime" class="stopwatch-time">05:00</p>
-          <div class="quick-timers" aria-label="クイックタイマー">
-            <button type="button" class="quick-button" data-minutes="1">1分</button>
-            <button type="button" class="quick-button" data-minutes="3">3分</button>
-            <button type="button" class="quick-button active" data-minutes="5">5分</button>
-            <button type="button" class="quick-button" data-minutes="10">10分</button>
-            <button type="button" class="quick-button" data-minutes="15">15分</button>
-            <button type="button" class="quick-button" data-minutes="30">30分</button>
-          </div>
-          <div class="timer-inputs">
-            <label>分<input id="timerMinutes" type="number" min="0" max="999" value="5" inputmode="numeric" /></label>
-            <label>秒<input id="timerSeconds" type="number" min="0" max="59" value="0" inputmode="numeric" /></label>
-          </div>
-          <div class="stopwatch-controls">
-            <button type="button" id="timerStartButton" class="primary-button">開始</button>
-            <button type="button" id="timerPauseButton" class="secondary-button" disabled>一時停止</button>
-            <button type="button" id="timerResetButton" class="danger-button" disabled>リセット</button>
-          </div>
-          <p id="timerStatus" class="timer-status">時間を設定して開始</p>
-        </section>
-      </section>
+  <section id="timerView" class="hidden"><section class="clock-card"><p class="label">複数タイマー</p><div class="timer-editor"><input id="timerLabel" placeholder="パスタ" /><div class="timer-inputs"><label>分<input id="timerMinutes" type="number" min="0" max="999" value="5" /></label><label>秒<input id="timerSeconds" type="number" min="0" max="59" value="0" /></label></div><button id="addMultiTimerButton" class="primary-button wide-button">タイマー追加</button></div><div class="quick-timers"><button class="quick-button" data-minutes="1">1分</button><button class="quick-button" data-minutes="3">3分</button><button class="quick-button" data-minutes="5">5分</button><button class="quick-button" data-minutes="10">10分</button><button class="quick-button" data-minutes="15">15分</button><button class="quick-button" data-minutes="30">30分</button></div><div id="multiTimerList" class="timer-list"></div></section><section class="favorites-section"><div class="favorites-header"><p class="label section-label">タイマー履歴</p></div><div id="timerHistory"></div></section></section>
 
-      <section id="alarmView" class="hidden" aria-live="polite">
-        <section class="clock-card alarm-card">
-          <p class="label">アラーム</p>
-          <div class="alarm-editor">
-            <label>時刻<input id="alarmTime" type="time" value="07:00" /></label>
-            <label>ラベル<input id="alarmLabel" type="text" maxlength="30" placeholder="起床" /></label>
-          </div>
-          <div class="weekday-picker" id="weekdayPicker" aria-label="繰り返す曜日">
-            <button type="button" class="weekday-button" data-day="1">月</button>
-            <button type="button" class="weekday-button" data-day="2">火</button>
-            <button type="button" class="weekday-button" data-day="3">水</button>
-            <button type="button" class="weekday-button" data-day="4">木</button>
-            <button type="button" class="weekday-button" data-day="5">金</button>
-            <button type="button" class="weekday-button" data-day="6">土</button>
-            <button type="button" class="weekday-button" data-day="0">日</button>
-          </div>
-          <button type="button" id="addAlarmButton" class="primary-button wide-button">アラームを追加</button>
-          <p class="alarm-note">ブラウザでこのページを開いている間に鳴ります。端末の音量も確認してね。</p>
-        </section>
+  <section id="alarmView" class="hidden"><section class="clock-card"><p class="label">アラーム</p><div class="alarm-editor"><label>時刻<input id="alarmTime" type="time" value="07:00" /></label><label>ラベル<input id="alarmLabel" type="text" placeholder="起床" /></label><label>音<select id="alarmSound"><option value="beep">標準</option><option value="soft">やさしい</option><option value="high">高音</option></select></label><label>スヌーズ<input id="snoozeMinutes" type="number" min="1" max="60" value="5" /></label></div><div class="weekday-picker"><button class="weekday-button" data-day="1">月</button><button class="weekday-button" data-day="2">火</button><button class="weekday-button" data-day="3">水</button><button class="weekday-button" data-day="4">木</button><button class="weekday-button" data-day="5">金</button><button class="weekday-button" data-day="6">土</button><button class="weekday-button" data-day="0">日</button></div><button id="addAlarmButton" class="primary-button wide-button">アラームを追加</button><p class="alarm-note">編集ボタンで既存アラームをフォームへ戻して変更できます。</p></section><section class="favorites-section"><div class="favorites-header"><p class="label section-label">登録済み</p><p id="alarmCount" class="favorite-count">0件</p></div><div id="alarmList" class="alarm-list"></div></section></section>
 
-        <section class="favorites-section">
-          <div class="favorites-header">
-            <p class="label section-label">登録済みアラーム</p>
-            <p id="alarmCount" class="favorite-count">0件</p>
-          </div>
-          <div id="alarmList" class="alarm-list">
-            <p class="empty-message">アラームはまだありません</p>
-          </div>
-        </section>
-      </section>
-
-      <div id="alarmOverlay" class="alarm-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ringingAlarmLabel">
-        <div class="alarm-dialog">
-          <p class="alarm-icon">⏰</p>
-          <p class="label">ALARM</p>
-          <h2 id="ringingAlarmLabel">アラーム</h2>
-          <p id="ringingAlarmTime" class="ringing-time">07:00</p>
-          <div class="alarm-dialog-actions">
-            <button type="button" id="snoozeAlarmButton" class="secondary-button">5分スヌーズ</button>
-            <button type="button" id="stopAlarmButton" class="primary-button">停止</button>
-          </div>
-        </div>
-      </div>
-    </main>
-
-    <script src="script.js?v=6" defer></script>
-  </body>
+  <div id="alarmOverlay" class="alarm-overlay hidden"><div class="alarm-dialog"><p class="alarm-icon">⏰</p><h2 id="ringingAlarmLabel">アラーム</h2><p id="ringingAlarmTime" class="ringing-time">07:00</p><div class="alarm-dialog-actions"><button id="snoozeAlarmButton" class="secondary-button">5分スヌーズ</button><button id="stopAlarmButton" class="primary-button">停止</button></div></div></div>
+</main>
+<script type="module" src="js/app.js?v=7"></script>
+</body>
 </html>
