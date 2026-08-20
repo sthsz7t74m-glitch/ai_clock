@@ -3,119 +3,72 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>デジタル時計</title>
-    <link rel="stylesheet" href="style.css?v=4" />
+    <meta name="theme-color" content="#0f172a" />
+    <title>AI Clock</title>
+    <link rel="stylesheet" href="style.css?v=5" />
   </head>
   <body>
     <main class="clock-app">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">TIME TOOL</p>
+          <h1 class="app-title">AI Clock</h1>
+        </div>
+        <span class="version">v2.0.0</span>
+      </header>
+
       <div class="view-tabs" role="tablist" aria-label="表示切り替え">
-        <button
-          type="button"
-          id="worldClockTab"
-          class="tab-button active"
-          role="tab"
-          aria-selected="true"
-        >
-          世界時計
-        </button>
-        <button
-          type="button"
-          id="stopwatchTab"
-          class="tab-button"
-          role="tab"
-          aria-selected="false"
-        >
-          ストップウォッチ
-        </button>
+        <button type="button" id="worldClockTab" class="tab-button active" role="tab" aria-selected="true">世界時計</button>
+        <button type="button" id="stopwatchTab" class="tab-button" role="tab" aria-selected="false">ストップウォッチ</button>
+        <button type="button" id="timerTab" class="tab-button" role="tab" aria-selected="false">タイマー</button>
       </div>
 
-      <div id="worldClockView">
+      <section id="worldClockView">
         <section class="clock-card" aria-live="polite">
           <p class="label">現在時刻</p>
           <div class="timezone-picker">
-            <label class="picker-label" for="timezoneSelect">地域を選択</label>
-            <select id="timezoneSelect" aria-label="タイムゾーンを選択">
-              <option value="Asia/Tokyo">東京</option>
-              <option value="Europe/London">ロンドン</option>
-              <option value="America/New_York">ニューヨーク</option>
-              <option value="America/Los_Angeles">ロサンゼルス</option>
-              <option value="Australia/Sydney">シドニー</option>
-            </select>
+            <label class="picker-label" for="timezoneSelect">地域</label>
+            <select id="timezoneSelect" aria-label="タイムゾーンを選択"></select>
           </div>
           <p id="cityName" class="city-name">東京</p>
-          <h1 id="time">--:--:--</h1>
-          <div
-            class="format-toggle"
-            role="group"
-            aria-label="時刻表示形式切り替え"
-          >
-            <button
-              type="button"
-              id="hour24Button"
-              class="toggle-button active"
-            >
-              24時間
-            </button>
-            <button type="button" id="hour12Button" class="toggle-button">
-              12時間
-            </button>
+          <p id="time" class="hero-time">--:--:--</p>
+          <p id="date" class="hero-date">----</p>
+          <div class="time-meta">
+            <span id="utcOffset" class="meta-chip">UTC+09:00</span>
+            <span id="dstStatus" class="meta-chip">標準時</span>
           </div>
-          <button type="button" id="addFavoriteButton" class="primary-button">
-            お気に入りに追加
-          </button>
-          <p id="date">----</p>
+          <div class="format-toggle" role="group" aria-label="時刻表示形式切り替え">
+            <button type="button" id="hour24Button" class="toggle-button active">24時間</button>
+            <button type="button" id="hour12Button" class="toggle-button">12時間</button>
+          </div>
+          <button type="button" id="addFavoriteButton" class="primary-button">お気に入りに追加</button>
         </section>
+
         <section class="favorites-section" aria-live="polite">
           <div class="favorites-header">
-            <p class="label">お気に入り都市</p>
-            <p id="favoriteCount" class="favorite-count">0/5</p>
+            <p class="label section-label">お気に入り都市</p>
+            <p id="favoriteCount" class="favorite-count">0/8</p>
           </div>
           <div id="favoritesList" class="favorites-list">
             <p class="empty-message">お気に入りはまだありません</p>
           </div>
         </section>
-      </div>
+      </section>
 
-      <section
-        id="stopwatchView"
-        class="stopwatch-view hidden"
-        aria-live="polite"
-      >
+      <section id="stopwatchView" class="hidden" aria-live="polite">
         <section class="clock-card stopwatch-card">
           <p class="label">ストップウォッチ</p>
           <p id="stopwatchTime" class="stopwatch-time">00:00:00.00</p>
           <div class="stopwatch-controls">
-            <button type="button" id="startButton" class="primary-button">
-              開始
-            </button>
-            <button
-              type="button"
-              id="pauseResumeButton"
-              class="primary-button"
-              disabled
-            >
-              一時停止
-            </button>
-            <button
-              type="button"
-              id="resetButton"
-              class="primary-button"
-              disabled
-            >
-              リセット
-            </button>
-            <button
-              type="button"
-              id="lapButton"
-              class="primary-button"
-              disabled
-            >
-              ラップ
-            </button>
+            <button type="button" id="startButton" class="primary-button">開始</button>
+            <button type="button" id="pauseResumeButton" class="secondary-button" disabled>一時停止</button>
+            <button type="button" id="lapButton" class="secondary-button" disabled>ラップ</button>
+            <button type="button" id="resetButton" class="danger-button" disabled>リセット</button>
           </div>
           <div class="laps-wrapper">
             <div class="favorites-header">
-              <p class="label">ラップ記録</p>
+              <p class="label section-label">ラップ記録</p>
+              <button type="button" id="clearLapsButton" class="text-button">記録だけ削除</button>
             </div>
             <div id="lapsList" class="laps-list">
               <p class="empty-message">ラップはまだありません</p>
@@ -123,8 +76,33 @@
           </div>
         </section>
       </section>
+
+      <section id="timerView" class="hidden" aria-live="polite">
+        <section class="clock-card timer-card">
+          <p class="label">タイマー</p>
+          <p id="timerTime" class="stopwatch-time">05:00</p>
+          <div class="quick-timers" aria-label="クイックタイマー">
+            <button type="button" class="quick-button" data-minutes="1">1分</button>
+            <button type="button" class="quick-button" data-minutes="3">3分</button>
+            <button type="button" class="quick-button active" data-minutes="5">5分</button>
+            <button type="button" class="quick-button" data-minutes="10">10分</button>
+            <button type="button" class="quick-button" data-minutes="15">15分</button>
+            <button type="button" class="quick-button" data-minutes="30">30分</button>
+          </div>
+          <div class="timer-inputs">
+            <label>分<input id="timerMinutes" type="number" min="0" max="999" value="5" inputmode="numeric" /></label>
+            <label>秒<input id="timerSeconds" type="number" min="0" max="59" value="0" inputmode="numeric" /></label>
+          </div>
+          <div class="stopwatch-controls">
+            <button type="button" id="timerStartButton" class="primary-button">開始</button>
+            <button type="button" id="timerPauseButton" class="secondary-button" disabled>一時停止</button>
+            <button type="button" id="timerResetButton" class="danger-button" disabled>リセット</button>
+          </div>
+          <p id="timerStatus" class="timer-status">時間を設定して開始</p>
+        </section>
+      </section>
     </main>
 
-    <script src="script.js?v=4" defer></script>
+    <script src="script.js?v=5" defer></script>
   </body>
 </html>
