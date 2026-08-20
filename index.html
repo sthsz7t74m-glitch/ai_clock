@@ -14,12 +14,13 @@
   <link rel="stylesheet" href="v2.3.css?v=1" />
   <link rel="stylesheet" href="v2.4.css?v=1" />
   <link rel="stylesheet" href="v2.4-settings.css?v=1" />
+  <link rel="stylesheet" href="v2.5.css?v=1" />
 </head>
 <body>
 <main class="clock-app">
   <header class="app-header">
     <div><p class="eyebrow">TIME TOOL</p><h1 class="app-title">AI Clock</h1></div>
-    <div class="header-actions"><button id="fullscreenButton" class="text-button">全画面</button><button id="settingsTab" class="settings-button">設定</button><span class="version">v2.4.0</span></div>
+    <div class="header-actions"><button id="homeTab" class="text-button">ホーム</button><button id="fullscreenButton" class="text-button">全画面</button><button id="settingsTab" class="settings-button">設定</button><span class="version">v2.5.0</span></div>
   </header>
 
   <nav class="view-tabs" role="tablist" aria-label="機能切り替え">
@@ -27,6 +28,20 @@
     <div class="nav-group measure-group"><span class="nav-group-title">MEASURE</span><div class="nav-buttons"><button id="stopwatchTab" class="tab-button">ストップウォッチ</button><button id="timerTab" class="tab-button">タイマー</button></div></div>
     <div class="nav-group zone-group"><span class="nav-group-title">TIME ZONE</span><div class="nav-buttons"><button id="convertTab" class="tab-button">変換</button><button id="meetingTab" class="tab-button">会議</button></div></div>
   </nav>
+
+  <section id="homeView" class="hidden">
+    <section class="clock-card dashboard-hero">
+      <div class="dashboard-title-row"><div><p class="label">HOME</p><h2>今日の時間ツール</h2></div><span class="dashboard-badge">v2.5</span></div>
+      <p class="meeting-lead">次のアラーム、動作中タイマー、お気に入り都市をまとめて確認できます。</p>
+      <div id="dashboardActions" class="dashboard-actions">
+        <button class="primary-button" data-open-view="timer">タイマー</button>
+        <button class="secondary-button" data-open-view="alarm">アラーム</button>
+        <button class="secondary-button" data-open-view="world">世界時計</button>
+        <button class="secondary-button" data-open-view="meeting">会議</button>
+      </div>
+    </section>
+    <section class="favorites-section"><div class="favorites-header"><p class="label section-label">現在の状態</p></div><div id="dashboardContent" class="dashboard-grid"></div></section>
+  </section>
 
   <section id="worldClockView">
     <section class="clock-card">
@@ -65,6 +80,7 @@
       <div class="settings-list">
         <div class="settings-row"><div class="settings-copy"><strong>テーマ</strong><span>端末設定に合わせるか、明るさを固定します。</span></div><select id="themeSelect"><option value="system">システム</option><option value="dark">ダーク</option><option value="light">ライト</option></select></div>
         <div class="settings-row"><div class="settings-copy"><strong>秒表示</strong><span>世界時計の秒を表示します。</span></div><label class="switch"><input id="secondsToggle" type="checkbox" checked /><span></span></label></div>
+        <div class="settings-row"><div class="settings-copy"><strong>通知</strong><span id="notificationStatus">確認中...</span></div><label class="switch"><input id="notificationToggle" type="checkbox" checked /><span></span></label></div>
         <div class="settings-row"><div class="settings-copy"><strong>画面スリープ防止</strong><span id="wakeLockStatus">確認中...</span></div><label class="switch"><input id="keepAwakeToggle" type="checkbox" /><span></span></label></div>
         <div class="settings-row"><div class="settings-copy"><strong>動きを減らす</strong><span>アニメーションや画面遷移を最小限にします。</span></div><label class="switch"><input id="reduceMotionToggle" type="checkbox" /><span></span></label></div>
       </div>
@@ -74,6 +90,6 @@
 
   <div id="alarmOverlay" class="alarm-overlay hidden"><div class="alarm-dialog"><p class="alarm-icon">⏰</p><h2 id="ringingAlarmLabel">アラーム</h2><p id="ringingAlarmTime" class="ringing-time">07:00</p><div class="alarm-dialog-actions"><button id="snoozeAlarmButton" class="secondary-button">5分スヌーズ</button><button id="stopAlarmButton" class="primary-button">停止</button></div></div></div>
 </main>
-<script type="module" src="js/app.js?v=9"></script>
+<script type="module" src="js/app.js?v=10"></script>
 </body>
 </html>
