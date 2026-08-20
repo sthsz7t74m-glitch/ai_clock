@@ -18,9 +18,10 @@ export class WakeLockService {
 }
 
 export class SettingsController {
-  constructor(storage,wakeLock){
+  constructor(storage,wakeLock,notifier=null){
     this.storage=storage;
     this.wakeLock=wakeLock;
+    this.notifier=notifier;
     this.deferredPrompt=null;
   }
   init(){
@@ -32,6 +33,11 @@ export class SettingsController {
     $('themeSelect')?.addEventListener('change',(e)=>{ this.theme=e.target.value; this.storage.set('theme',this.theme); this.applyTheme(); });
     $('reduceMotionToggle')?.addEventListener('change',(e)=>{ this.reduceMotion=e.target.checked; this.storage.set('reduceMotion',this.reduceMotion); this.applyMotion(); });
     $('keepAwakeToggle')?.addEventListener('change',async(e)=>{ this.keepAwake=e.target.checked; this.storage.set('keepAwake',this.keepAwake); await this.applyWakeLock(); });
+    $('notificationToggle')?.addEventListener('change',async(e)=>{
+      this.notifier?.setEnabled(e.target.checked);
+      if(e.target.checked) await this.notifier?.requestPermission();
+      this.updateNotificationStatus();
+    });
     $('installAppButton')?.addEventListener('click',()=>this.install());
 
     window.addEventListener('beforeinstallprompt',(event)=>{
@@ -52,10 +58,20 @@ export class SettingsController {
     if($('themeSelect')) $('themeSelect').value=this.theme;
     if($('reduceMotionToggle')) $('reduceMotionToggle').checked=this.reduceMotion;
     if($('keepAwakeToggle')) $('keepAwakeToggle').checked=this.keepAwake;
+    if($('notificationToggle')) $('notificationToggle').checked=this.notifier?.enabled() ?? false;
     this.applyTheme();
     this.applyMotion();
     this.applyWakeLock();
+    this.updateNotificationStatus();
     if($('wakeLockStatus')) $('wakeLockStatus').textContent=this.wakeLock.supported()?'対応':'この端末では未対応';
+  }
+  updateNotificationStatus(){
+    if(!$('notificationStatus')) return;
+    if(!this.notifier?.supported()) $('notificationStatus').textContent='このブラウザでは未対応';
+    else if(!this.notifier.enabled()) $('notificationStatus').textContent='OFF';
+    else if(this.notifier.permission()==='granted') $('notificationStatus').textContent='ON';
+    else if(this.notifier.permission()==='denied') $('notificationStatus').textContent='ブラウザで拒否されています';
+    else $('notificationStatus').textContent='ONにすると許可を確認します';
   }
   applyTheme(){
     const resolved=this.theme==='system'?(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark'):this.theme;
