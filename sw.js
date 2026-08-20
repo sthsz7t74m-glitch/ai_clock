@@ -1,5 +1,5 @@
-const CACHE='ai-clock-v2.4.0';
-const ASSETS=['./','./index.html','./style.css','./v2.2.css','./v2.3.css','./manifest.webmanifest','./icon.svg','./js/app.js','./js/core.js','./js/world-clock.js','./js/stopwatch.js','./js/timer.js','./js/alarm.js','./js/converter.js','./js/meeting-planner.js','./js/meeting-planner-service.js','./js/settings.js'];
+const CACHE='ai-clock-v2.4.0-r2';
+const ASSETS=['./','./index.html','./style.css','./v2.2.css','./v2.3.css','./v2.4.css','./v2.4-settings.css','./manifest.webmanifest','./icon.svg','./js/app.js','./js/core.js','./js/world-clock.js','./js/stopwatch.js','./js/timer.js','./js/alarm.js','./js/converter.js','./js/meeting-planner.js','./js/meeting-planner-service.js','./js/settings.js'];
 self.addEventListener('install',(event)=>{ event.waitUntil(caches.open(CACHE).then((cache)=>cache.addAll(ASSETS))); self.skipWaiting(); });
 self.addEventListener('activate',(event)=>{ event.waitUntil(caches.keys().then((keys)=>Promise.all(keys.filter((key)=>key!==CACHE).map((key)=>caches.delete(key))))); self.clients.claim(); });
 self.addEventListener('fetch',(event)=>{
