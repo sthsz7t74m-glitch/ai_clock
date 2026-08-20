@@ -1,7 +1,7 @@
 {
   "name": "AI Clock",
   "short_name": "AI Clock",
-  "start_url": "./",
+  "start_url": "./?view=home",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0b1120",
@@ -14,5 +14,10 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "世界時計", "short_name": "世界時計", "url": "./?view=world", "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "タイマー", "short_name": "タイマー", "url": "./?view=timer", "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "アラーム", "short_name": "アラーム", "url": "./?view=alarm", "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
   ]
 }
