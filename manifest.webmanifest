@@ -1,0 +1,18 @@
+{
+  "name": "AI Clock",
+  "short_name": "AI Clock",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1120",
+  "theme_color": "#0f172a",
+  "description": "世界時計、タイマー、アラーム、時差変換、会議時間ファインダーをまとめた時計ツール",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
