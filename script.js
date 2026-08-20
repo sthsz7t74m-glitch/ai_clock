@@ -1,495 +1,277 @@
-const worldClockTab = document.getElementById("worldClockTab");
-const stopwatchTab = document.getElementById("stopwatchTab");
-const worldClockView = document.getElementById("worldClockView");
-const stopwatchView = document.getElementById("stopwatchView");
+const $ = (id) => document.getElementById(id);
 
-const timeElement = document.getElementById("time");
-const dateElement = document.getElementById("date");
-const cityNameElement = document.getElementById("cityName");
-const timezoneSelect = document.getElementById("timezoneSelect");
-const hour24Button = document.getElementById("hour24Button");
-const hour12Button = document.getElementById("hour12Button");
-const addFavoriteButton = document.getElementById("addFavoriteButton");
-const favoritesList = document.getElementById("favoritesList");
-const favoriteCountLabel = document.getElementById("favoriteCount");
+const worldClockTab = $("worldClockTab");
+const stopwatchTab = $("stopwatchTab");
+const timerTab = $("timerTab");
+const worldClockView = $("worldClockView");
+const stopwatchView = $("stopwatchView");
+const timerView = $("timerView");
 
-const stopwatchTimeElement = document.getElementById("stopwatchTime");
-const startButton = document.getElementById("startButton");
-const pauseResumeButton = document.getElementById("pauseResumeButton");
-const resetButton = document.getElementById("resetButton");
-const lapButton = document.getElementById("lapButton");
-const lapsList = document.getElementById("lapsList");
+const timeElement = $("time");
+const dateElement = $("date");
+const cityNameElement = $("cityName");
+const timezoneSelect = $("timezoneSelect");
+const utcOffsetElement = $("utcOffset");
+const dstStatusElement = $("dstStatus");
+const hour24Button = $("hour24Button");
+const hour12Button = $("hour12Button");
+const addFavoriteButton = $("addFavoriteButton");
+const favoritesList = $("favoritesList");
+const favoriteCountLabel = $("favoriteCount");
 
-const cityNames = {
-  "Asia/Tokyo": "東京",
-  "Europe/London": "ロンドン",
-  "America/New_York": "ニューヨーク",
-  "America/Los_Angeles": "ロサンゼルス",
-  "Australia/Sydney": "シドニー",
-};
+const stopwatchTimeElement = $("stopwatchTime");
+const startButton = $("startButton");
+const pauseResumeButton = $("pauseResumeButton");
+const resetButton = $("resetButton");
+const lapButton = $("lapButton");
+const clearLapsButton = $("clearLapsButton");
+const lapsList = $("lapsList");
+
+const timerTimeElement = $("timerTime");
+const timerMinutes = $("timerMinutes");
+const timerSeconds = $("timerSeconds");
+const timerStartButton = $("timerStartButton");
+const timerPauseButton = $("timerPauseButton");
+const timerResetButton = $("timerResetButton");
+const timerStatus = $("timerStatus");
+
+const CITIES = [
+  ["Asia/Tokyo", "東京"], ["Asia/Seoul", "ソウル"], ["Asia/Shanghai", "上海"],
+  ["Asia/Hong_Kong", "香港"], ["Asia/Singapore", "シンガポール"], ["Asia/Bangkok", "バンコク"],
+  ["Asia/Kolkata", "デリー"], ["Asia/Dubai", "ドバイ"], ["Europe/London", "ロンドン"],
+  ["Europe/Paris", "パリ"], ["Europe/Berlin", "ベルリン"], ["America/New_York", "ニューヨーク"],
+  ["America/Chicago", "シカゴ"], ["America/Denver", "デンバー"], ["America/Los_Angeles", "ロサンゼルス"],
+  ["America/Honolulu", "ホノルル"], ["America/Sao_Paulo", "サンパウロ"], ["Australia/Sydney", "シドニー"],
+  ["Pacific/Auckland", "オークランド"]
+];
+const cityNames = Object.fromEntries(CITIES);
 
 const STORAGE_HOUR_FORMAT = "aiClockHourFormat";
 const STORAGE_FAVORITES = "aiClockFavorites";
 const STORAGE_STOPWATCH = "aiClockStopwatch";
+const STORAGE_TIMER = "aiClockTimer";
 const HOUR_FORMAT_24 = "24";
 const HOUR_FORMAT_12 = "12";
-const MAX_FAVORITES = 5;
+const MAX_FAVORITES = 8;
 let hasLocalStorage = true;
-let stopwatchState = {
-  running: false,
-  elapsed: 0,
-  startTimestamp: null,
-  laps: [],
-  lastLapElapsed: 0,
-};
-let rafId = null;
+let stopwatchState = { running: false, elapsed: 0, startTimestamp: null, laps: [], lastLapElapsed: 0 };
+let timerState = { running: false, remaining: 300000, endTimestamp: null, initial: 300000 };
 
 function safeGetItem(key) {
   if (!hasLocalStorage) return null;
-  try {
-    return window.localStorage.getItem(key);
-  } catch (error) {
-    hasLocalStorage = false;
-    return null;
-  }
+  try { return localStorage.getItem(key); } catch { hasLocalStorage = false; return null; }
 }
-
 function safeSetItem(key, value) {
   if (!hasLocalStorage) return;
-  try {
-    window.localStorage.setItem(key, value);
-  } catch (error) {
-    hasLocalStorage = false;
-  }
+  try { localStorage.setItem(key, value); } catch { hasLocalStorage = false; }
 }
 
-function getSavedHourFormat() {
-  const saved = safeGetItem(STORAGE_HOUR_FORMAT);
-  return saved === HOUR_FORMAT_12 ? HOUR_FORMAT_12 : HOUR_FORMAT_24;
+function getHourFormat() { return safeGetItem(STORAGE_HOUR_FORMAT) === HOUR_FORMAT_12 ? HOUR_FORMAT_12 : HOUR_FORMAT_24; }
+function getFavorites() {
+  try { const value = JSON.parse(safeGetItem(STORAGE_FAVORITES) || "[]"); return Array.isArray(value) ? value.filter((z) => cityNames[z]) : []; }
+  catch { return []; }
+}
+function saveFavorites(value) { safeSetItem(STORAGE_FAVORITES, JSON.stringify(value)); }
+
+function formatDateTime(date, timeZone) {
+  const hour12 = getHourFormat() === HOUR_FORMAT_12;
+  const time = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12, timeZone }).format(date);
+  const dateText = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long", day: "numeric", weekday: "short", timeZone }).format(date);
+  return { time, date: dateText };
 }
 
-function getSavedFavorites() {
-  const saved = safeGetItem(STORAGE_FAVORITES);
-  if (!saved) return [];
-
-  try {
-    const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function getOffsetLabel(timeZone, date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" }).formatToParts(date);
+  const value = parts.find((p) => p.type === "timeZoneName")?.value || "GMT";
+  return value.replace("GMT", "UTC");
 }
 
-function saveFavorites(favorites) {
-  safeSetItem(STORAGE_FAVORITES, JSON.stringify(favorites));
+function getOffsetMinutes(timeZone, date) {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+  const asUtc = Date.UTC(+values.year, +values.month - 1, +values.day, +values.hour, +values.minute, +values.second);
+  return Math.round((asUtc - date.getTime()) / 60000);
 }
 
-function saveHourFormat(format) {
-  safeSetItem(STORAGE_HOUR_FORMAT, format);
+function isDst(timeZone, date = new Date()) {
+  const year = date.getUTCFullYear();
+  const jan = getOffsetMinutes(timeZone, new Date(Date.UTC(year, 0, 15, 12)));
+  const jul = getOffsetMinutes(timeZone, new Date(Date.UTC(year, 6, 15, 12)));
+  const current = getOffsetMinutes(timeZone, date);
+  return current !== Math.min(jan, jul);
 }
 
-function getSavedStopwatch() {
-  const saved = safeGetItem(STORAGE_STOPWATCH);
-  if (!saved) return null;
-
-  try {
-    const parsed = JSON.parse(saved);
-    if (parsed && typeof parsed === "object") {
-      return {
-        running: Boolean(parsed.running),
-        elapsed: Number(parsed.elapsed) || 0,
-        startTimestamp:
-          parsed.running && Number(parsed.startTimestamp)
-            ? Number(parsed.startTimestamp)
-            : null,
-        laps: Array.isArray(parsed.laps) ? parsed.laps : [],
-        lastLapElapsed: Number(parsed.lastLapElapsed) || 0,
-      };
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function saveStopwatchState() {
-  safeSetItem(STORAGE_STOPWATCH, JSON.stringify(stopwatchState));
-}
-
-function parseIntlDate(date, options) {
-  try {
-    return new Intl.DateTimeFormat("ja-JP", options).format(date);
-  } catch {
-    return null;
-  }
-}
-
-function fallbackTimeString(date, hourFormat) {
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const seconds = date.getSeconds();
-  const padded = (value) => String(value).padStart(2, "0");
-
-  if (hourFormat === HOUR_FORMAT_12) {
-    const period = hours < 12 ? "午前" : "午後";
-    const h = hours % 12 || 12;
-    return `${period}${String(h).padStart(2, "0")}:${padded(minutes)}:${padded(seconds)}`;
-  }
-
-  return `${padded(hours)}:${padded(minutes)}:${padded(seconds)}`;
-}
-
-function fallbackDateString(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
-  const weekdays = [
-    "日曜日",
-    "月曜日",
-    "火曜日",
-    "水曜日",
-    "木曜日",
-    "金曜日",
-    "土曜日",
-  ];
-  const weekday = weekdays[date.getDay()];
-  return `${year}年${month}月${day}日${weekday}`;
-}
-
-function formatDateTime(date, timeZone, hourFormat) {
-  const timeOptions = {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: hourFormat === HOUR_FORMAT_12,
-    timeZone,
-  };
-
-  const dateOptions = {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-    weekday: "long",
-    timeZone,
-  };
-
-  const time =
-    parseIntlDate(date, timeOptions) || fallbackTimeString(date, hourFormat);
-  const dateText = parseIntlDate(date, dateOptions) || fallbackDateString(date);
-
-  return {
-    time,
-    date: dateText,
-  };
-}
-
-function formatStopwatchTime(ms) {
-  const totalCentiseconds = Math.floor(ms / 10);
-  const hundredths = totalCentiseconds % 100;
-  const seconds = Math.floor(totalCentiseconds / 100) % 60;
-  const minutes = Math.floor(totalCentiseconds / 6000) % 60;
-  const hours = Math.floor(totalCentiseconds / 360000);
-
-  const padded = (value, length = 2) => String(value).padStart(length, "0");
-
-  return `${padded(hours)}:${padded(minutes)}:${padded(seconds)}.${padded(hundredths)}`;
+function populateCities() {
+  timezoneSelect.innerHTML = CITIES.map(([zone, name]) => `<option value="${zone}">${name}</option>`).join("");
+  timezoneSelect.value = "Asia/Tokyo";
 }
 
 function updateClock() {
-  const selectedTimeZone = timezoneSelect.value;
-  const hourFormat = getSavedHourFormat();
+  const zone = timezoneSelect.value;
   const now = new Date();
-  const formatted = formatDateTime(now, selectedTimeZone, hourFormat);
-
+  const formatted = formatDateTime(now, zone);
   timeElement.textContent = formatted.time;
   dateElement.textContent = formatted.date;
-  cityNameElement.textContent = cityNames[selectedTimeZone] || selectedTimeZone;
-}
-
-function updateFavoriteTimes() {
-  const hourFormat = getSavedHourFormat();
-  const cards = favoritesList.querySelectorAll(".favorite-card");
-  cards.forEach((card) => {
-    const timeZone = card.getAttribute("data-timezone");
-    if (!timeZone) return;
-    const formatted = formatDateTime(new Date(), timeZone, hourFormat);
-    const timeElement = card.querySelector(".favorite-time");
-    const dateElement = card.querySelector(".favorite-date");
-    if (timeElement) timeElement.textContent = formatted.time;
-    if (dateElement) dateElement.textContent = formatted.date;
-  });
-}
-
-function renderFavorites() {
-  const favorites = getSavedFavorites();
-  const hourFormat = getSavedHourFormat();
-
-  favoriteCountLabel.textContent = `${favorites.length}/${MAX_FAVORITES}`;
-  favoritesList.innerHTML = "";
-  updateAddFavoriteButtonState();
-
-  if (favorites.length === 0) {
-    favoritesList.innerHTML =
-      '<p class="empty-message">お気に入りはまだありません</p>';
-    return;
-  }
-
-  favorites.forEach((timeZone) => {
-    const formatted = formatDateTime(new Date(), timeZone, hourFormat);
-    const card = document.createElement("article");
-    card.className = "favorite-card";
-    card.setAttribute("data-timezone", timeZone);
-
-    card.innerHTML = `
-      <div class="favorite-card-header">
-        <p class="favorite-title">${cityNames[timeZone] || timeZone}</p>
-        <button type="button" class="favorite-remove" data-timezone="${timeZone}">削除</button>
-      </div>
-      <p class="favorite-time">${formatted.time}</p>
-      <p class="favorite-date">${formatted.date}</p>
-    `;
-
-    favoritesList.appendChild(card);
-  });
+  cityNameElement.textContent = cityNames[zone] || zone;
+  utcOffsetElement.textContent = getOffsetLabel(zone, now);
+  dstStatusElement.textContent = isDst(zone, now) ? "サマータイム" : "標準時";
 }
 
 function updateAddFavoriteButtonState() {
-  const selectedTimeZone = timezoneSelect.value;
-  const favorites = getSavedFavorites();
-  addFavoriteButton.disabled =
-    favorites.includes(selectedTimeZone) || favorites.length >= MAX_FAVORITES;
+  const favorites = getFavorites();
+  addFavoriteButton.disabled = favorites.includes(timezoneSelect.value) || favorites.length >= MAX_FAVORITES;
+}
+
+function renderFavorites() {
+  const favorites = getFavorites();
+  favoriteCountLabel.textContent = `${favorites.length}/${MAX_FAVORITES}`;
+  favoritesList.innerHTML = "";
+  if (!favorites.length) {
+    favoritesList.innerHTML = '<p class="empty-message">お気に入りはまだありません</p>';
+  } else {
+    favorites.forEach((zone) => {
+      const formatted = formatDateTime(new Date(), zone);
+      const card = document.createElement("article");
+      card.className = "favorite-card";
+      card.dataset.timezone = zone;
+      card.innerHTML = `<div class="favorite-card-header"><div><p class="favorite-title">${cityNames[zone]}</p><p class="favorite-meta">${getOffsetLabel(zone)} · ${isDst(zone) ? "DST" : "標準時"}</p></div><button class="favorite-remove" data-timezone="${zone}">削除</button></div><p class="favorite-time">${formatted.time}</p><p class="favorite-date">${formatted.date}</p>`;
+      favoritesList.appendChild(card);
+    });
+  }
+  updateAddFavoriteButtonState();
+}
+
+function updateFavoriteTimes() {
+  favoritesList.querySelectorAll(".favorite-card").forEach((card) => {
+    const zone = card.dataset.timezone;
+    const formatted = formatDateTime(new Date(), zone);
+    card.querySelector(".favorite-time").textContent = formatted.time;
+    card.querySelector(".favorite-date").textContent = formatted.date;
+  });
 }
 
 function addFavorite() {
-  const selectedTimeZone = timezoneSelect.value;
-  const favorites = getSavedFavorites();
-
-  if (
-    favorites.includes(selectedTimeZone) ||
-    favorites.length >= MAX_FAVORITES
-  ) {
-    return;
+  const favorites = getFavorites();
+  if (!favorites.includes(timezoneSelect.value) && favorites.length < MAX_FAVORITES) {
+    favorites.push(timezoneSelect.value); saveFavorites(favorites); renderFavorites();
   }
-
-  favorites.push(selectedTimeZone);
-  saveFavorites(favorites);
-  renderFavorites();
 }
-
-function removeFavorite(timeZone) {
-  const favorites = getSavedFavorites().filter((item) => item !== timeZone);
-  saveFavorites(favorites);
-  renderFavorites();
-}
+function removeFavorite(zone) { saveFavorites(getFavorites().filter((z) => z !== zone)); renderFavorites(); }
 
 function switchView(view) {
-  const worldActive = view === "world";
-  worldClockView.classList.toggle("hidden", !worldActive);
-  stopwatchView.classList.toggle("hidden", worldActive);
-  worldClockTab.classList.toggle("active", worldActive);
-  stopwatchTab.classList.toggle("active", !worldActive);
-  worldClockTab.setAttribute("aria-selected", worldActive.toString());
-  stopwatchTab.setAttribute("aria-selected", (!worldActive).toString());
+  const entries = [["world", worldClockView, worldClockTab], ["stopwatch", stopwatchView, stopwatchTab], ["timer", timerView, timerTab]];
+  entries.forEach(([name, panel, tab]) => {
+    const active = name === view;
+    panel.classList.toggle("hidden", !active);
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", String(active));
+  });
 }
 
-function getStopwatchElapsed(now) {
-  if (stopwatchState.running && stopwatchState.startTimestamp != null) {
-    return (
-      stopwatchState.elapsed + Math.max(0, now - stopwatchState.startTimestamp)
-    );
-  }
-  return stopwatchState.elapsed;
+function formatStopwatchTime(ms) {
+  const cs = Math.floor(ms / 10);
+  const hundredths = cs % 100;
+  const seconds = Math.floor(cs / 100) % 60;
+  const minutes = Math.floor(cs / 6000) % 60;
+  const hours = Math.floor(cs / 360000);
+  const p = (v) => String(v).padStart(2, "0");
+  return `${p(hours)}:${p(minutes)}:${p(seconds)}.${p(hundredths)}`;
 }
-
-function updateStopwatchDisplay() {
-  const now = Date.now();
-  const elapsed = getStopwatchElapsed(now);
-  stopwatchTimeElement.textContent = formatStopwatchTime(elapsed);
-  updateControlStates();
+function getStopwatchElapsed() { return stopwatchState.running ? stopwatchState.elapsed + Math.max(0, Date.now() - stopwatchState.startTimestamp) : stopwatchState.elapsed; }
+function saveStopwatch() { safeSetItem(STORAGE_STOPWATCH, JSON.stringify(stopwatchState)); }
+function loadStopwatch() {
+  try { const s = JSON.parse(safeGetItem(STORAGE_STOPWATCH)); if (s) stopwatchState = { ...stopwatchState, ...s }; } catch {}
 }
-
-function animateStopwatch() {
-  updateStopwatchDisplay();
-  rafId = requestAnimationFrame(animateStopwatch);
-}
-
-function updateControlStates() {
+function updateStopwatch() {
+  stopwatchTimeElement.textContent = formatStopwatchTime(getStopwatchElapsed());
   startButton.disabled = stopwatchState.running || stopwatchState.elapsed > 0;
-  pauseResumeButton.disabled =
-    stopwatchState.elapsed === 0 && !stopwatchState.running;
-  resetButton.disabled =
-    stopwatchState.elapsed === 0 && !stopwatchState.running;
+  pauseResumeButton.disabled = !stopwatchState.running && stopwatchState.elapsed === 0;
+  resetButton.disabled = !stopwatchState.running && stopwatchState.elapsed === 0 && stopwatchState.laps.length === 0;
   lapButton.disabled = !stopwatchState.running;
   pauseResumeButton.textContent = stopwatchState.running ? "一時停止" : "再開";
 }
-
+function renderLaps() {
+  if (!stopwatchState.laps.length) { lapsList.innerHTML = '<p class="empty-message">ラップはまだありません</p>'; return; }
+  lapsList.innerHTML = stopwatchState.laps.map((lap) => `<article class="lap-card"><div class="lap-row"><b>Lap ${lap.number}</b><b>${formatStopwatchTime(lap.lapTime)}</b></div><div class="lap-row muted"><span>区間</span><span>合計 ${formatStopwatchTime(lap.totalTime)}</span></div></article>`).join("");
+}
+function startStopwatch() { stopwatchState.running = true; stopwatchState.startTimestamp = Date.now(); if (!stopwatchState.elapsed) { stopwatchState.laps = []; stopwatchState.lastLapElapsed = 0; } saveStopwatch(); }
+function pauseResumeStopwatch() {
+  if (stopwatchState.running) { stopwatchState.elapsed = getStopwatchElapsed(); stopwatchState.running = false; stopwatchState.startTimestamp = null; }
+  else { stopwatchState.running = true; stopwatchState.startTimestamp = Date.now(); }
+  saveStopwatch();
+}
+function resetStopwatch() { stopwatchState = { running: false, elapsed: 0, startTimestamp: null, laps: [], lastLapElapsed: 0 }; saveStopwatch(); renderLaps(); }
 function addLap() {
   if (!stopwatchState.running) return;
-
-  const now = Date.now();
-  const elapsed = getStopwatchElapsed(now);
-  const lapTime = elapsed - stopwatchState.lastLapElapsed;
-  stopwatchState.lastLapElapsed = elapsed;
-  stopwatchState.laps.unshift({
-    number: stopwatchState.laps.length + 1,
-    lapTime,
-    totalTime: elapsed,
-  });
-  saveStopwatchState();
-  renderLaps();
+  const total = getStopwatchElapsed();
+  stopwatchState.laps.unshift({ number: stopwatchState.laps.length + 1, lapTime: total - stopwatchState.lastLapElapsed, totalTime: total });
+  stopwatchState.lastLapElapsed = total; saveStopwatch(); renderLaps();
 }
+function clearLaps() { stopwatchState.laps = []; stopwatchState.lastLapElapsed = getStopwatchElapsed(); saveStopwatch(); renderLaps(); }
 
-function renderLaps() {
-  const laps = stopwatchState.laps;
-  lapsList.innerHTML = "";
-
-  if (laps.length === 0) {
-    lapsList.innerHTML = '<p class="empty-message">ラップはまだありません</p>';
-    return;
-  }
-
-  laps.forEach((lap, index) => {
-    const card = document.createElement("article");
-    card.className = "lap-card";
-    card.innerHTML = `
-      <div class="lap-row">
-        <p class="lap-number">Lap ${lap.number}</p>
-        <p class="lap-duration">${formatStopwatchTime(lap.lapTime)}</p>
-      </div>
-      <div class="lap-row">
-        <p class="lap-time">区間</p>
-        <p class="lap-total">合計 ${formatStopwatchTime(lap.totalTime)}</p>
-      </div>
-    `;
-    lapsList.appendChild(card);
-  });
+function formatTimer(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const min = Math.floor(total / 60); const sec = total % 60;
+  return `${String(min).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
 }
-
-function startStopwatch() {
-  if (stopwatchState.running) return;
-
-  stopwatchState.running = true;
-  stopwatchState.startTimestamp = Date.now();
-  if (stopwatchState.elapsed === 0) {
-    stopwatchState.lastLapElapsed = 0;
-    stopwatchState.laps = [];
-  }
-  saveStopwatchState();
-  updateControlStates();
+function saveTimer() { safeSetItem(STORAGE_TIMER, JSON.stringify(timerState)); }
+function loadTimer() {
+  try { const s = JSON.parse(safeGetItem(STORAGE_TIMER)); if (s) timerState = { ...timerState, ...s }; } catch {}
 }
-
-function pauseResumeStopwatch() {
-  if (stopwatchState.running) {
-    stopwatchState.elapsed = getStopwatchElapsed(Date.now());
-    stopwatchState.running = false;
-    stopwatchState.startTimestamp = null;
-    saveStopwatchState();
-  } else {
-    stopwatchState.running = true;
-    stopwatchState.startTimestamp = Date.now();
-    saveStopwatchState();
-  }
-  updateControlStates();
+function getTimerRemaining() { return timerState.running ? Math.max(0, timerState.endTimestamp - Date.now()) : timerState.remaining; }
+function syncTimerInputs(ms) { timerMinutes.value = Math.floor(ms / 60000); timerSeconds.value = Math.floor((ms % 60000) / 1000); }
+function setTimer(ms) { timerState = { running: false, remaining: ms, endTimestamp: null, initial: ms }; syncTimerInputs(ms); saveTimer(); updateTimer(); }
+function updateTimer() {
+  const remaining = getTimerRemaining();
+  timerTimeElement.textContent = formatTimer(remaining);
+  if (timerState.running && remaining <= 0) {
+    timerState.running = false; timerState.remaining = 0; timerState.endTimestamp = null; saveTimer();
+    timerStatus.textContent = "時間です！"; document.title = "⏰ 時間です！ - AI Clock";
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  } else if (timerState.running) timerStatus.textContent = "計測中";
+  else timerStatus.textContent = remaining === 0 ? "終了" : "時間を設定して開始";
+  timerStartButton.disabled = timerState.running || remaining <= 0;
+  timerPauseButton.disabled = !timerState.running && remaining === timerState.initial;
+  timerPauseButton.textContent = timerState.running ? "一時停止" : "再開";
+  timerResetButton.disabled = remaining === timerState.initial && !timerState.running;
 }
-
-function resetStopwatch() {
-  if (stopwatchState.elapsed === 0 && stopwatchState.laps.length === 0) return;
-  stopwatchState = {
-    running: false,
-    elapsed: 0,
-    startTimestamp: null,
-    laps: [],
-    lastLapElapsed: 0,
-  };
-  saveStopwatchState();
-  renderLaps();
-  updateStopwatchDisplay();
+function startTimer() {
+  const ms = (+timerMinutes.value * 60 + +timerSeconds.value) * 1000;
+  if (!timerState.running && timerState.remaining === timerState.initial) setTimer(ms || 60000);
+  timerState.endTimestamp = Date.now() + timerState.remaining; timerState.running = true; saveTimer(); document.title = "AI Clock";
 }
-
-function initStopwatch() {
-  const saved = getSavedStopwatch();
-  if (saved) {
-    stopwatchState = saved;
-    if (stopwatchState.running) {
-      const now = Date.now();
-      if (
-        stopwatchState.startTimestamp &&
-        stopwatchState.startTimestamp > now
-      ) {
-        stopwatchState.startTimestamp = now;
-      }
-    }
-  }
-  renderLaps();
-  updateControlStates();
+function pauseTimer() {
+  if (timerState.running) { timerState.remaining = getTimerRemaining(); timerState.running = false; timerState.endTimestamp = null; }
+  else if (timerState.remaining > 0) { timerState.endTimestamp = Date.now() + timerState.remaining; timerState.running = true; }
+  saveTimer();
 }
+function resetTimer() { setTimer(timerState.initial || 300000); timerStatus.textContent = "時間を設定して開始"; document.title = "AI Clock"; }
 
-function switchToWorldClock() {
-  switchView("world");
-}
-
-function switchToStopwatch() {
-  switchView("stopwatch");
-}
-
-function initApp() {
-  switchToWorldClock();
-
-  const initialHourFormat = getSavedHourFormat();
-  setHourFormat(initialHourFormat, true);
-  updateClock();
-  renderFavorites();
-  updateAddFavoriteButtonState();
-
-  timezoneSelect.addEventListener("change", () => {
-    updateClock();
-    updateAddFavoriteButtonState();
-  });
-  hour24Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_24));
-  hour12Button.addEventListener("click", () => setHourFormat(HOUR_FORMAT_12));
-  addFavoriteButton.addEventListener("click", addFavorite);
-  favoritesList.addEventListener("click", (event) => {
-    const button = event.target.closest(".favorite-remove");
-    if (!button) return;
-    const timeZone = button.getAttribute("data-timezone");
-    if (timeZone) removeFavorite(timeZone);
-  });
-
-  worldClockTab.addEventListener("click", switchToWorldClock);
-  stopwatchTab.addEventListener("click", switchToStopwatch);
-
-  startButton.addEventListener("click", startStopwatch);
-  pauseResumeButton.addEventListener("click", pauseResumeStopwatch);
-  resetButton.addEventListener("click", resetStopwatch);
-  lapButton.addEventListener("click", addLap);
-
-  initStopwatch();
-  renderLaps();
-  updateClock();
-  updateFavoriteTimes();
-
-  setInterval(() => {
-    updateClock();
-    updateFavoriteTimes();
-  }, 1000);
-
-  animateStopwatch();
-}
-
-function setHourFormat(format, skipSave = false) {
-  if (!skipSave) {
-    saveHourFormat(format);
-  }
+function setHourFormat(format) {
+  safeSetItem(STORAGE_HOUR_FORMAT, format);
   hour24Button.classList.toggle("active", format === HOUR_FORMAT_24);
   hour12Button.classList.toggle("active", format === HOUR_FORMAT_12);
-  updateClock();
-  updateFavoriteTimes();
+  updateClock(); renderFavorites();
 }
 
-window.addEventListener("DOMContentLoaded", initApp);
-window.addEventListener("pageshow", () => {
-  updateClock();
-  updateFavoriteTimes();
-  initStopwatch();
-});
+function init() {
+  populateCities(); loadStopwatch(); loadTimer();
+  setHourFormat(getHourFormat()); renderFavorites(); renderLaps(); syncTimerInputs(getTimerRemaining());
+  worldClockTab.onclick = () => switchView("world");
+  stopwatchTab.onclick = () => switchView("stopwatch");
+  timerTab.onclick = () => switchView("timer");
+  timezoneSelect.onchange = () => { updateClock(); updateAddFavoriteButtonState(); };
+  hour24Button.onclick = () => setHourFormat(HOUR_FORMAT_24);
+  hour12Button.onclick = () => setHourFormat(HOUR_FORMAT_12);
+  addFavoriteButton.onclick = addFavorite;
+  favoritesList.onclick = (e) => { const b = e.target.closest(".favorite-remove"); if (b) removeFavorite(b.dataset.timezone); };
+  startButton.onclick = startStopwatch; pauseResumeButton.onclick = pauseResumeStopwatch; resetButton.onclick = resetStopwatch; lapButton.onclick = addLap; clearLapsButton.onclick = clearLaps;
+  document.querySelectorAll(".quick-button").forEach((b) => b.onclick = () => { document.querySelectorAll(".quick-button").forEach((x) => x.classList.remove("active")); b.classList.add("active"); setTimer(+b.dataset.minutes * 60000); });
+  [timerMinutes, timerSeconds].forEach((input) => input.onchange = () => setTimer((Math.max(0, +timerMinutes.value) * 60 + Math.min(59, Math.max(0, +timerSeconds.value))) * 1000));
+  timerStartButton.onclick = startTimer; timerPauseButton.onclick = pauseTimer; timerResetButton.onclick = resetTimer;
+  switchView("world"); updateClock(); updateTimer();
+  setInterval(() => { updateClock(); updateFavoriteTimes(); updateStopwatch(); updateTimer(); }, 100);
+}
+
+window.addEventListener("DOMContentLoaded", init);
+window.addEventListener("pageshow", () => { updateClock(); updateFavoriteTimes(); updateStopwatch(); updateTimer(); });
