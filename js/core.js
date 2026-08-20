@@ -67,10 +67,12 @@ export class TimeFormatter {
     return this.offsetMinutes(zone,date) !== Math.min(jan,jul);
   }
   localDateToInstant(dateString, timeString, zone) {
-    const [y,m,d] = dateString.split("-").map(Number); const [hh,mm] = timeString.split(":").map(Number);
-    let guess = Date.UTC(y,m-1,d,hh,mm,0);
-    for (let i=0;i<3;i++) guess -= this.offsetMinutes(zone,new Date(guess))*60000;
-    return new Date(guess);
+    const [y,m,d] = dateString.split("-").map(Number);
+    const [hh,mm] = timeString.split(":").map(Number);
+    const localAsUtc = Date.UTC(y,m-1,d,hh,mm,0);
+    let instant = localAsUtc - this.offsetMinutes(zone,new Date(localAsUtc))*60000;
+    instant = localAsUtc - this.offsetMinutes(zone,new Date(instant))*60000;
+    return new Date(instant);
   }
 }
 
